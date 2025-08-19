@@ -1,11 +1,11 @@
 import { spawn } from "child_process";
-import { ECP_PASSWORD } from "../../config";
+import { AUTOIT_APP_PATH, ECP_PASSWORD } from "../../config";
 
 export const runAutoItScript = (scriptPath: string, noTimeout?: boolean): Promise<void> => {
  return new Promise((resolve, reject) => {
   //  console.log("🤖 Запускаем AutoIt скрипт...");
    
-   const autoIt = spawn("C:\\Program Files (x86)\\AutoIt3\\AutoIt3.exe", [scriptPath, ECP_PASSWORD]);
+   const autoIt = spawn(AUTOIT_APP_PATH, [scriptPath, ECP_PASSWORD]);
 
    autoIt.on("close", (code) => {
      if (code === 0) {

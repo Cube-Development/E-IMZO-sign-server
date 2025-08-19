@@ -12,7 +12,6 @@ export const signDocument = async (
   const prefix = `Document ID: ${documentId} | owner: ${owner}`;
   log.info(`${prefix} | 🚀 Начинаем подписание документа`);
 
-
   try {
     // 1. Получаем JSON документа
     const {documentJson, toSign} = await getSignInfoEDO(documentId, owner);
@@ -38,8 +37,8 @@ export const signDocument = async (
       keyId = await loadKey(ws, certificates[0]);
       log.crypto(`${prefix} | Ключ загружен`);
 
-      const autoItPromise = runAutoItScript("src/script/auto-sign.au3");
-      log.info(`${prefix} | Запущен AutoIt-скрипт для подписи`);
+      // const autoItPromise = runAutoItScript("src/script/auto-sign.au3");
+      // log.info(`${prefix} | Запущен AutoIt-скрипт для подписи`);
 
       // 4. Создаём подпись
       ({ pkcs7_64, signature_hex } = await signFunction(
@@ -49,7 +48,7 @@ export const signDocument = async (
       ));
       log.crypto(`${prefix} | Подпись создана`);
 
-      await autoItPromise;
+      // await autoItPromise;
       log.info(`${prefix} | AutoIt-скрипт завершён`);
     } else {
         keyId = oldKeyId;

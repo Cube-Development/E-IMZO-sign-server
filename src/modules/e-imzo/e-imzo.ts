@@ -2,6 +2,7 @@
 import { login } from "../../actions";
 import { setAuthToken } from "../../api";
 import { CRYPTOAPI_WSS, LOGIN_REFRESH_DELAY } from "../../config";
+import { log } from "../../utils";
 import { createWebSocket } from "../../websoket";
 
 export class EImzoSession {
@@ -19,7 +20,7 @@ export class EImzoSession {
     // Запускаем авто-обновление токена и keyId каждый час
     this.startAutoRefresh();
 
-    console.log("✅ EImzoSession инициализирована");
+    log.success("✅ EImzoSession инициализирована");
   }
 
   private async login() {
@@ -33,7 +34,7 @@ export class EImzoSession {
     // Сохраняем токен для API
     setAuthToken(token);
 
-    console.log("🔑 EImzoSession вошла в систему / токен обновлён");
+    log.websocket("🔑 EImzoSession вошла в систему / токен обновлён");
   }
 
   // Метод для авто-обновления токена
@@ -42,10 +43,10 @@ export class EImzoSession {
 
     this.intervalHandle = setInterval(async () => {
       try {
-        console.log("🔄 Автообновление токена и keyId...");
+        log.websocket("🔄 Автообновление токена и keyId...");
         await this.login();
       } catch (err) {
-        console.error("Ошибка при автообновлении EImzoSession:", err);
+        log.error(`Ошибка при автообновлении EImzoSession: ${err}`);
       }
     }, this.refreshIntervalMs);
   }

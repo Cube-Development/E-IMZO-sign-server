@@ -1,18 +1,16 @@
+import https from "https";
 import axios from "axios";
-import { DIDOX_URL } from "../config";
 import { log } from "../utils";
+import { DIDOX_URL } from "../config";
 import { IGetTokenRequest, IGetTokenResponse } from "../type";
 
-// Отключаем проверку SSL-сертификатов для локальной разработки
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+const agent = new https.Agent({ rejectUnauthorized: false });
 
-// Создаём инстанс axios
 const authApi = axios.create({
   baseURL: DIDOX_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
   timeout: 30000,
+  httpsAgent: process.env.USE_INSECURE_TLS === "true" ? agent : undefined,
 });
 
 // Переменная для хранения токена
@@ -21,7 +19,7 @@ let authToken: string | null = null;
 // Функция для установки токена
 export const setAuthToken = (token: string) => {
   authToken = token;
-  console.log("🔑 Токен установлен для всех запросов");
+  log.api("🔑 Токен установлен для всех запросов");
 };
 
 // Interceptor для автоматического добавления токена
@@ -123,7 +121,6 @@ export const createSignEDO = async (documentId: string, signature: string, owner
     }
   }
 };
-
 
 export const getTokenByCertificate = async (bodyParams: IGetTokenRequest): Promise<IGetTokenResponse> => {
  try {

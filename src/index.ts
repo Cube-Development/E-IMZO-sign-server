@@ -6,6 +6,8 @@ import { EImzoSession } from "./modules/e-imzo";
 import { runAutoItScript } from './script/auto-it';
 import swaggerUi from "swagger-ui-express";
 import { openApiDocument } from './utils/swagger';
+import { USE_AUTOIT_DEMON } from './config';
+import { log } from './utils';
 
 const app = express();
 app.use(express.json());
@@ -14,9 +16,14 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Подключаем Swagger UI
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
-runAutoItScript("src/script/auto-it/auto-sign-demon.au3", true)
-  .then(() => console.log("AutoIt-демон завершился (неожиданно)"))
-  .catch(err => console.error("Ошибка демона AutoIt:", err));
+if (USE_AUTOIT_DEMON) {
+  log.info("Запускаем демона AutoIt");
+  runAutoItScript("src/script/auto-it/auto-sign-demon.au3", true)
+  .then(() => log.warn("AutoIt-демон завершился (неожиданно)"))
+  .catch(err => log.error(`Ошибка демона AutoIt: ${err}`));
+} else {
+  log.info("AutoIt-демон не используется");
+}
 
 export const eImzo = new EImzoSession();
 
@@ -32,5 +39,5 @@ app.use(ROUTES_SIGN.BASE, signRouter);
 const port = Number(process.env.PORT) || 3000;
 
 app.listen(port, "0.0.0.0",  () => {
-    console.log(`Server is running on port ${port}`);
+    log.info(`Server is running on port ${port}`);
 });

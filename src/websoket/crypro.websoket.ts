@@ -1,8 +1,9 @@
 import WebSocket from "ws";
+import { log } from "../utils";
 
 export const createWebSocket = (url: string): Promise<WebSocket> => {
   return new Promise((resolve, reject) => {
-    console.log(`🔌 Подключаемся к WebSocket: ${url}`);
+    log.info(`🔌 Подключаемся к WebSocket: ${url}`);
     
     const ws = new WebSocket(url, {
           rejectUnauthorized: false,
@@ -19,18 +20,18 @@ export const createWebSocket = (url: string): Promise<WebSocket> => {
 
     ws.on("open", () => {
       clearTimeout(timeout);
-      console.log("✅ WebSocket подключен");
+      log.success("✅ WebSocket подключен");
       resolve(ws);
     });
 
     ws.on("error", (error) => {
       clearTimeout(timeout);
-      console.error("❌ Ошибка WebSocket:", error);
+      log.error(`❌ Ошибка WebSocket: ${error}`);
       reject(error);
     });
 
     ws.on("close", (code, reason) => {
-      console.log(`🔌 WebSocket закрыт: код ${code}, причина: ${reason}`);
+      log.debug(`🔌 WebSocket закрыт: код ${code}, причина: ${reason}`);
     });
   });
 };
