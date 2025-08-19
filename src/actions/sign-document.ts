@@ -9,7 +9,7 @@ export const signDocument = async (
   ws?: any,
   oldKeyId?: string | null,
 ): Promise<{keyId: string, success: boolean}> => {
-  const prefix = `Document ID: ${documentId} | owner: ${owner} | oldKeyId: ${oldKeyId}`;
+  const prefix = `Document ID: ${documentId} | owner: ${owner}`;
   log.info(`${prefix} | 🚀 Начинаем подписание документа`);
 
   try {
