@@ -21,45 +21,42 @@ export const signDocument = async (
     let pkcs7_64: string;
     let signature_hex: string;
 
-    // if (!oldKeyId) {
-    //   // 2. Получаем сертификаты
-    //   const certificates = await getCertificates(ws);
-    //   log.crypto(`${prefix} | Получено сертификатов: ${certificates.length}`);
+    if (!oldKeyId) {
+      // 2. Получаем сертификаты
+      const certificates = await getCertificates(ws);
+      log.crypto(`${prefix} | Получено сертификатов: ${certificates.length}`);
 
-    //   if (!certificates.length) {
-    //     console.error(`${prefix} | Сертификаты не найдены`);
-    //     throw new Error("Сертификаты не найдены");
-    //   }
+      if (!certificates.length) {
+        console.error(`${prefix} | Сертификаты не найдены`);
+        throw new Error("Сертификаты не найдены");
+      }
 
-    //   // 3. Загружаем ключ для первого сертификата
-    //   keyId = await loadKey(ws, certificates[0]);
-    //   log.crypto(`${prefix} | Ключ загружен`);
+      // 3. Загружаем ключ для первого сертификата
+      keyId = await loadKey(ws, certificates[0]);
+      log.crypto(`${prefix} | Ключ загружен`);
 
-    //   const autoItPromise = runAutoItScript("src/script/auto-sign.au3");
-    //   log.info(`${prefix} | Запущен AutoIt-скрипт для подписи`);
+      const autoItPromise = runAutoItScript("src/script/auto-sign.au3");
+      log.info(`${prefix} | Запущен AutoIt-скрипт для подписи`);
 
-    //   // 4. Создаём подпись
-    //   ({ pkcs7_64, signature_hex } = await createSignature(
-    //     ws,
-    //     keyId,
-    //     JSON.stringify(documentJson)
-    //   ));
-    //   log.crypto(`${prefix} | Подпись создана`);
+      // 4. Создаём подпись
+      ({ pkcs7_64, signature_hex } = await createSignature(
+        ws,
+        keyId,
+        JSON.stringify(documentJson)
+      ));
+      log.crypto(`${prefix} | Подпись создана`);
 
-    //   await autoItPromise;
-    //   log.info(`${prefix} | AutoIt-скрипт завершён`);
-    // } else {
-    //   // Используем переданный ключ
-    
-    // }
-    
-      keyId = oldKeyId || "";
-    ({ pkcs7_64, signature_hex } = await createSignature(
-      ws,
-      keyId,
-      JSON.stringify(documentJson)
-    ));
-    log.crypto(`${prefix} | Подпись создана (старый ключ)`);
+      await autoItPromise;
+      log.info(`${prefix} | AutoIt-скрипт завершён`);
+    } else {
+        keyId = oldKeyId;
+      ({ pkcs7_64, signature_hex } = await createSignature(
+        ws,
+        keyId,
+        JSON.stringify(documentJson)
+      ));
+      log.crypto(`${prefix} | Подпись создана (старый ключ)`);
+    }
 
     // 5. Получаем timestamp
     const timestamp = await getTimestamp(pkcs7_64, signature_hex, documentId, owner);

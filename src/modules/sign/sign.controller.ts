@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
+import { z } from "zod";
 import { eImzo } from "../..";
 import { signDocument } from "../../actions";
-import { SignDocumentSchema } from "./dto";
-import { z } from "zod";
 import { log } from "../../utils";
+import { SignDocumentSchema } from "./dto";
 
 export const createSignDocument = async (req: Request, res: Response) => {
     const parsed = SignDocumentSchema.safeParse(req.body);
@@ -14,7 +14,7 @@ export const createSignDocument = async (req: Request, res: Response) => {
         return res.status(422).json({
             status: "error",
             message: "Ошибка валидации",
-            errors,
+            errors: errors?.properties,
         });
     }
 
