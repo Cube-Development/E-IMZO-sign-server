@@ -1,16 +1,20 @@
 import 'dotenv/config'; 
 import bodyParser from "body-parser";
 import express from "express";
-import { ROUTES_SIGN, signRouter } from "./modules/sign";
+import { ROUTES_SIGN, signRouter } from "./modules/sign-didox";
 import { EImzoSession } from "./modules/e-imzo";
-import { runAutoItScript } from './script';
+import { runAutoItScript } from './script/auto-it';
+import swaggerUi from "swagger-ui-express";
+import { openApiDocument } from './utils/swagger';
 
 const app = express();
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+// Подключаем Swagger UI
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
-runAutoItScript("src/script/auto-sign-demon.au3", true)
+runAutoItScript("src/script/auto-it/auto-sign-demon.au3", true)
   .then(() => console.log("AutoIt-демон завершился (неожиданно)"))
   .catch(err => console.error("Ошибка демона AutoIt:", err));
 

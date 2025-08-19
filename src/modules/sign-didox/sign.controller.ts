@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
 import { z } from "zod";
-import { eImzo } from "../..";
 import { signDocument } from "../../actions";
+import { eImzo } from "../../index";
 import { log } from "../../utils";
 import { SignDocumentSchema } from "./dto";
 
-export const createSignDocument = async (req: Request, res: Response) => {
+export const createSignDidoxDocument = async (req: Request, res: Response) => {
     const parsed = SignDocumentSchema.safeParse(req.body);
 
      if (!parsed.success) {

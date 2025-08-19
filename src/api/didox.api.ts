@@ -1,7 +1,7 @@
 import axios from "axios";
 import { DIDOX_URL } from "../config";
-import { IGetTokenRequest, IGetTokenResponse } from "../types";
 import { log } from "../utils";
+import { IGetTokenRequest, IGetTokenResponse } from "../type";
 
 // Отключаем проверку SSL-сертификатов для локальной разработки
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';

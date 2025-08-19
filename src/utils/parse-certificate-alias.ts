@@ -1,4 +1,4 @@
-import { ParsedCertificateInfo } from "../types";
+import { ParsedCertificateInfo } from "../type";
 
 export const parseCertificateAlias = (alias: string): ParsedCertificateInfo => {
   const parts = alias.split(",");

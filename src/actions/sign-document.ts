@@ -1,7 +1,7 @@
-import { createSignEDO, getSignInfoEDO, getTimestamp } from "../api";
-import { runAutoItScript } from "../script";
-import { log } from "../utils";
+import { runAutoItScript } from "../script/auto-it";
 import { createSignature, getCertificates, loadKey } from "../websoket";
+import { log } from "../utils";
+import { getSignInfoEDO, getTimestamp } from "../api";
 
 export const signDocument = async (
   documentId: string,

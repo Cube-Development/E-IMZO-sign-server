@@ -1,8 +1,8 @@
 // src/modules/eimzo/session.ts
-import { createWebSocket } from "../../websoket";
 import { login } from "../../actions";
 import { setAuthToken } from "../../api";
 import { CRYPTOAPI_WSS, LOGIN_REFRESH_DELAY } from "../../config";
+import { createWebSocket } from "../../websoket";
 
 export class EImzoSession {
   private ws: any = null;

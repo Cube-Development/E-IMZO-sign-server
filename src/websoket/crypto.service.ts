@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { Certificate, WebSocketMessage, WebSocketResponse, CreateSignatureResponse } from "../types";
+import { Certificate, WebSocketMessage, WebSocketResponse, CreateSignatureResponse } from "../type";
 
 const sendMessage = (ws: WebSocket, message: WebSocketMessage): Promise<WebSocketResponse> => {
   return new Promise((resolve, reject) => {

@@ -1,5 +1,5 @@
 import { spawn } from "child_process";
-import { ECP_PASSWORD } from "../config";
+import { ECP_PASSWORD } from "../../config";
 
 export const runAutoItScript = (scriptPath: string, noTimeout?: boolean): Promise<void> => {
  return new Promise((resolve, reject) => {

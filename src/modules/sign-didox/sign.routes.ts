@@ -1,4 +1,4 @@
 export const ROUTES_SIGN = {
     BASE : '/sign',
-    CREATE: '/',
+    CREATE_DIDOX: '/didox',
 } as const

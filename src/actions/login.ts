@@ -1,7 +1,7 @@
-import { getTimestamp, getTokenByCertificate } from "../api";
-import { runAutoItScript } from "../script";
+import { runAutoItScript } from "../script/auto-it";
 import { log, parseCertificateAlias } from "../utils";
 import { createSignature, getCertificates, loadKey } from "../websoket";
+import { getTimestamp, getTokenByCertificate } from "./../api";
 
 export const login = async (ws?: any): Promise<{token: string, keyId: string}> => {
   try {
@@ -21,7 +21,7 @@ export const login = async (ws?: any): Promise<{token: string, keyId: string}> =
     const keyId = await loadKey(ws, certificates[0]);
     log.crypto(`Ключ загружен`);
 
-    const autoItPromise = runAutoItScript("src/script/auto-sign.au3");
+    const autoItPromise = runAutoItScript("src/script/auto-it/auto-sign.au3");
     log.info(`Запущен AutoIt-скрипт для подписи`);
 
     // 3. Создаём подпись
