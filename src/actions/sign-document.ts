@@ -1,7 +1,7 @@
 import { runAutoItScript } from "../script/auto-it";
-import { createSignature, getCertificates, loadKey } from "../websoket";
+import { createAttachedSignature, createSignature, getCertificates, loadKey } from "../websoket";
 import { log } from "../utils";
-import { getSignInfoEDO, getTimestamp } from "../api";
+import { createSignEDO, getSignInfoEDO, getTimestamp } from "../api";
 
 export const signDocument = async (
   documentId: string,
@@ -12,14 +12,17 @@ export const signDocument = async (
   const prefix = `Document ID: ${documentId} | owner: ${owner}`;
   log.info(`${prefix} | 🚀 Начинаем подписание документа`);
 
+
   try {
     // 1. Получаем JSON документа
-    const documentJson = await getSignInfoEDO(documentId, owner);
+    const {documentJson, toSign} = await getSignInfoEDO(documentId, owner);
     log.api(`${prefix} | Получен JSON для подписи`);
 
     let keyId: string;
     let pkcs7_64: string;
     let signature_hex: string;
+    let base64Data: string = owner === 1 ? JSON.stringify(documentJson) : toSign
+    const signFunction = owner === 1 ? createSignature: createAttachedSignature
 
     if (!oldKeyId) {
       // 2. Получаем сертификаты
@@ -39,10 +42,10 @@ export const signDocument = async (
       log.info(`${prefix} | Запущен AutoIt-скрипт для подписи`);
 
       // 4. Создаём подпись
-      ({ pkcs7_64, signature_hex } = await createSignature(
+      ({ pkcs7_64, signature_hex } = await signFunction(
         ws,
         keyId,
-        JSON.stringify(documentJson)
+        base64Data
       ));
       log.crypto(`${prefix} | Подпись создана`);
 
@@ -50,10 +53,10 @@ export const signDocument = async (
       log.info(`${prefix} | AutoIt-скрипт завершён`);
     } else {
         keyId = oldKeyId;
-      ({ pkcs7_64, signature_hex } = await createSignature(
+      ({ pkcs7_64, signature_hex } = await signFunction(
         ws,
         keyId,
-        JSON.stringify(documentJson)
+        base64Data
       ));
       log.crypto(`${prefix} | Подпись создана (старый ключ)`);
     }
@@ -67,12 +70,12 @@ export const signDocument = async (
     }
 
     // 6. Отправляем подпись
-    // await createSignEDO(documentId, timestamp);
+    await createSignEDO(documentId, timestamp, owner);
     log.success(`${prefix} | Документ успешно подписан!`);
 
     return {success: true, keyId};
   } catch (error: any) {
-    log.error(`${prefix} | 💥 Ошибка при подписании документа: ${error?.data}`);
+    log.error(`${prefix} | 💥 Ошибка при подписании документа: ${JSON.stringify(error?.data)}`);
     throw error;
   }
 };

@@ -35,7 +35,7 @@ export const createSignDidoxDocument = async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        log.error(`❌ Ошибка подписания документа | Document ID: ${doc_id} | Owner: ${owner} | Message: ${error}`);
+        log.error(`❌ Ошибка подписания документа | Document ID: ${doc_id} | Owner: ${owner} | Message: ${JSON.stringify(error)}`);
 
         res.status(error?.status || 500).json({
             status: "error",

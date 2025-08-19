@@ -102,3 +102,30 @@ export const createSignature = async (
     signature_hex: response.signature_hex,
   };
 };
+
+
+export const createAttachedSignature = async (
+  ws: WebSocket,
+  keyId: string,
+  row: string
+): Promise<CreateSignatureResponse> => {
+  // console.log("✍️ Создаём цифровую подпись...");
+  
+  const message: WebSocketMessage = {
+    plugin: "pkcs7",
+    name: "append_pkcs7_attached",
+    arguments: [row, keyId],
+  };
+
+  const response = await sendMessage(ws, message);
+  
+  if (!response.pkcs7_64 || !response.signature_hex) {
+    throw new Error("Не удалось создать подпись");
+  }
+  
+  // console.log("✅ Подпись создана успешно");
+  return {
+    pkcs7_64: response.pkcs7_64,
+    signature_hex: response.signature_hex,
+  };
+};

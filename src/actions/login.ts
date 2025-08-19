@@ -21,7 +21,7 @@ export const login = async (ws?: any): Promise<{token: string, keyId: string}> =
     const keyId = await loadKey(ws, certificates[0]);
     log.crypto(`Ключ загружен`);
 
-    const autoItPromise = runAutoItScript("src/script/auto-it/auto-sign.au3");
+    // const autoItPromise = runAutoItScript("src/script/auto-it/auto-sign.au3");
     log.info(`Запущен AutoIt-скрипт для подписи`);
 
     // 3. Создаём подпись
@@ -29,7 +29,7 @@ export const login = async (ws?: any): Promise<{token: string, keyId: string}> =
     log.crypto(`Подпись создана`);
 
     // Ждём завершения AutoIt (опционально)
-    await autoItPromise;
+    // await autoItPromise;
     log.info(`AutoIt-скрипт завершён`);
 
     // 4. Получаем timestamp

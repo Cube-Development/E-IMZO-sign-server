@@ -45,12 +45,12 @@ const api = axios.create({
 });
 
 
-export const getSignInfoEDO = async (documentId: string, owner: 0 | 1 = 0) => {
+export const getSignInfoEDO = async (documentId: string, owner: 0 | 1 = 0): Promise<{documentJson: object, toSign: string}> => {
  try {
     const response = await authApi.get(`/v1/documents/${documentId}?owner=${owner}`);
-    return response?.data?.data?.json || {};
+    return {documentJson: response?.data?.data?.json || {}, toSign: response?.data?.data?.toSign || ""};
   } catch (error: any) {
-    log.error(`❌ Get Document Info Error | Document ID: ${documentId} | Owner: ${owner} | Status: ${error?.response?.status} | Error: ${error?.response?.data} | Message: ${JSON.stringify(error)}`);
+    log.error(`❌ Get Document Info Error | Document ID: ${documentId} | Owner: ${owner} | Status: ${error?.response?.status} | Error: ${error?.response?.data}`);
 
     if (error?.response) {
       // Если это ошибка от сервиса — пробрасываем её дальше с деталями
@@ -79,7 +79,7 @@ export const getTimestamp = async (pkcs7: string, signatureHex: string, document
     // console.log("✅ Timestamp получен");
     return timestamp;
   } catch (error: any) {
-    log.error(`❌ Get Timestamp Error | Document ID: ${documentId} | Owner: ${owner} | Status: ${error?.response?.status} | Error: ${error?.response?.data} | Message: ${JSON.stringify(error)}`);
+    log.error(`❌ Get Timestamp Error | Document ID: ${documentId} | Owner: ${owner} | Status: ${error?.response?.status} | Error: ${error?.response?.data}`);
 
     if (error?.response) {
       // Если это ошибка от сервиса — пробрасываем её дальше с деталями
@@ -106,7 +106,7 @@ export const createSignEDO = async (documentId: string, signature: string, owner
     // console.log("✅ Документ подписан успешно");
     return response?.data;
   } catch (error: any) {
-    log.error(`❌ Create Sign Error | Document ID: ${documentId} | Owner: ${owner} | Status: ${error?.response?.status} | Error: ${error?.response?.data} | Message: ${JSON.stringify(error)}`);
+    log.error(`❌ Create Sign Error | Document ID: ${documentId} | Owner: ${owner} | Status: ${error?.response?.status} | Error: ${JSON.stringify(error?.response?.data)}`);
 
     if (error?.response) {
       // Если это ошибка от сервиса — пробрасываем её дальше с деталями
