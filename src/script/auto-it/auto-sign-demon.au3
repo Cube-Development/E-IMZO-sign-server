@@ -14,15 +14,25 @@ ConsoleWrite("✅ Демон запущен. Жду окна..." & @CRLF)
 While True
    ; Проверяем, существует ли окно
    If WinExists("Отмена через") Then
-       ; Вводим PIN напрямую в окно (без активации)
-       ControlSend("Отмена через", "", "", $PIN)
+       ; Сначала пробуем ControlSetText
+       ControlSetText("Отмена через", "", "", $PIN)
+       Sleep(200)
+       
+       ; Если не сработало, используем медленный ввод
+       Local $currentText = ControlGetText("Отмена через", "", "")
+       If $currentText <> $PIN Then
+           ControlSetText("Отмена через", "", "", "")
+           Sleep(100)
+           For $i = 1 To StringLen($PIN)
+               ControlSend("Отмена через", "", "", StringMid($PIN, $i, 1))
+               Sleep(50)
+           Next
+       EndIf
+       
        Sleep(300)
-
-       ; Нажимаем Enter (OK)
        ControlSend("Отмена через", "", "", "{ENTER}")
-
        Sleep(500)
-
+       
        ConsoleWrite("✔ Окно обработано." & @CRLF)
    EndIf
 

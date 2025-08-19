@@ -14,13 +14,25 @@ export class EImzoSession {
   constructor() {}
 
   // Инициализация при старте сервера
+  // src/modules/eimzo/session.ts
   public async init() {
-    await this.login();
+    let retries = 0;
+    const maxRetries = 5;
 
-    // Запускаем авто-обновление токена и keyId каждый час
-    this.startAutoRefresh();
+    while (retries < maxRetries) {
+      try {
+        await this.login();
+        this.startAutoRefresh();
+        log.success("✅ EImzoSession инициализирована");
+        return;
+      } catch (err) {
+        retries++;
+        log.error(`❌ Ошибка логина (попытка ${retries}/${maxRetries}): ${err}`);
+        await new Promise((res) => setTimeout(res, 1000)); // ждем 5 сек перед повтором
+      }
+    }
 
-    log.success("✅ EImzoSession инициализирована");
+    throw new Error("❌ Не удалось инициализировать EImzoSession после нескольких попыток");
   }
 
   private async login() {
