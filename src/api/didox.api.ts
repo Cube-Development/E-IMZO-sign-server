@@ -48,7 +48,7 @@ export const getSignInfoEDO = async (documentId: string, owner: 0 | 1 = 0): Prom
     const response = await authApi.get(`/v1/documents/${documentId}?owner=${owner}`);
     return {documentJson: response?.data?.data?.json || {}, toSign: response?.data?.data?.toSign || ""};
   } catch (error: any) {
-    log.error(`❌ Get Document Info Error | Document ID: ${documentId} | Owner: ${owner} | Status: ${error?.response?.status} | Error: ${error?.response?.data}`);
+    log.error(`❌ Get Document Info Error | Document ID: ${documentId} | Owner: ${owner} | Status: ${error?.response?.status} | Error: ${JSON.stringify(error?.response?.data)}`);
 
     if (error?.response) {
       // Если это ошибка от сервиса — пробрасываем её дальше с деталями
@@ -77,7 +77,7 @@ export const getTimestamp = async (pkcs7: string, signatureHex: string, document
     // console.log("✅ Timestamp получен");
     return timestamp;
   } catch (error: any) {
-    log.error(`❌ Get Timestamp Error | Document ID: ${documentId} | Owner: ${owner} | Status: ${error?.response?.status} | Error: ${error?.response?.data}`);
+    log.error(`❌ Get Timestamp Error | Document ID: ${documentId} | Owner: ${owner} | Status: ${error?.response?.status} | Error: ${JSON.stringify( error?.response?.data)}`);
 
     if (error?.response) {
       // Если это ошибка от сервиса — пробрасываем её дальше с деталями

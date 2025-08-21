@@ -1,0 +1,36 @@
+import axios from "axios";
+import https from "https";
+import { BLOGIX_API_URL } from "../config";
+import { IBLogixDocuments } from "../type";
+import { log } from "../utils";
+
+const agent = new https.Agent({ rejectUnauthorized: false });
+
+const blogixApi = axios.create({
+  baseURL: BLOGIX_API_URL,
+  headers: { "Content-Type": "application/json", "X-Api-Key": process.env.BLOGIX_API_KEY!},
+  timeout: 30000,
+  httpsAgent: process.env.USE_INSECURE_TLS === "true" ? agent : undefined,
+});
+
+
+export const getBlogixDocuments = async (owner: 0 | 1 = 1): Promise<IBLogixDocuments> => {
+  try {
+    const response = await blogixApi.get(`/documents/${owner}`);
+    return response?.data;
+  } catch (error) {
+    log.error(`❌ Ошибка получения документов: ${JSON.stringify(error)}`);
+    throw new Error(`Не удалось получить документы: ${JSON.stringify(error)}`);
+  }
+};
+
+
+export const signBlogixDocument = async (id: string): Promise<{success: boolean}> => {
+  try {
+    const response = await blogixApi.post(`/v1/documents/sign/${id}`);
+    return response?.data ;
+  } catch (error) {
+    log.error(`❌ Ошибка подписания документа: ${JSON.stringify(error)}`);
+    throw new Error(`Не удалось подписать документ: ${JSON.stringify(error)}`);
+  }
+};

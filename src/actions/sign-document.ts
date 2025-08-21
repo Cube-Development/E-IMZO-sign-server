@@ -69,7 +69,7 @@ export const signDocument = async (
     }
 
     // 6. Отправляем подпись
-    await createSignEDO(documentId, timestamp, owner);
+    // await createSignEDO(documentId, timestamp, owner);
     log.success(`${prefix} | Документ успешно подписан!`);
 
     return {success: true, keyId};

@@ -10,11 +10,11 @@ export class EImzoSession {
   private keyId: string | null = null;
   private refreshIntervalMs = LOGIN_REFRESH_DELAY * 60 * 1000; // n минут
   private intervalHandle: NodeJS.Timeout | null = null;
+  private isActive: boolean = false;
 
   constructor() {}
 
   // Инициализация при старте сервера
-  // src/modules/eimzo/session.ts
   public async init() {
     let retries = 0;
     const maxRetries = 5;
@@ -23,12 +23,13 @@ export class EImzoSession {
       try {
         await this.login();
         this.startAutoRefresh();
+        this.isActive = true;
         log.success("✅ EImzoSession инициализирована");
         return;
       } catch (err) {
         retries++;
         log.error(`❌ Ошибка логина (попытка ${retries}/${maxRetries}): ${err}`);
-        await new Promise((res) => setTimeout(res, 1000)); // ждем 5 сек перед повтором
+        await new Promise((res) => setTimeout(res, 1000)); // ждем 1 сек перед повтором
       }
     }
 
@@ -36,6 +37,11 @@ export class EImzoSession {
   }
 
   private async login() {
+    // Закрываем предыдущее соединение если есть
+    if (this.ws && this.ws.readyState === this.ws.OPEN) {
+      this.ws.close();
+    }
+
     // Подключение к WebSocket
     this.ws = await createWebSocket(CRYPTOAPI_WSS);
 
@@ -54,6 +60,8 @@ export class EImzoSession {
     if (this.intervalHandle) clearInterval(this.intervalHandle);
 
     this.intervalHandle = setInterval(async () => {
+      if (!this.isActive) return; // Не обновляем если сессия закрыта
+      
       try {
         log.websocket("🔄 Автообновление токена и keyId...");
         await this.login();
@@ -76,5 +84,43 @@ export class EImzoSession {
   // Метод для обновления keyId вручную
   public setKeyId(newKeyId: string) {
     this.keyId = newKeyId;
+  }
+
+  // Метод для проверки активности
+  public isSessionActive(): boolean {
+    return this.isActive;
+  }
+
+  // Метод для закрытия сессии
+  public async close(): Promise<void> {
+    log.info("🛑 Закрытие EImzoSession...");
+    
+    this.isActive = false;
+
+    // Останавливаем автообновление
+    if (this.intervalHandle) {
+      clearInterval(this.intervalHandle);
+      this.intervalHandle = null;
+      log.debug("⏰ Автообновление токена остановлено");
+    }
+
+    // Закрываем WebSocket соединение
+    if (this.ws && this.ws.readyState === this.ws.OPEN) {
+      this.ws.close();
+      log.websocket("🔌 WebSocket соединение закрыто");
+    }
+
+    // Очищаем состояние
+    this.ws = null;
+    this.keyId = null;
+
+    log.success("✅ EImzoSession закрыта");
+  }
+
+  // Метод для переподключения (полезно при ошибках)
+  public async reconnect(): Promise<void> {
+    log.info("🔄 Переподключение EImzoSession...");
+    await this.close();
+    await this.init();
   }
 }
