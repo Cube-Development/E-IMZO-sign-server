@@ -56,6 +56,30 @@ export const getCertificates = async (ws: WebSocket): Promise<Certificate[]> => 
   return response.certificates;
 };
 
+
+export const addApiKey = async (ws: WebSocket): Promise<boolean> => {
+  
+  const message: WebSocketMessage = {
+    name: "apikey",
+    arguments: [
+      "localhost",
+      "96D0C1491615C82B9A54D9989779DF825B690748224C2B04F500F370D51827CE2644D8D4A82C18184D73AB8530BB8ED537269603F61DB0D03D2104ABF789970B",
+      "127.0.0.1",
+      "A7BCFA5D490B351BE0754130DF03A068F855DB4333D43921125B9CF2670EF6A40370C646B90401955E1F7BC9CDBF59CE0B2C5467D820BE189C845D0B79CFC96F",
+      "blogix.uz",
+      "CB1B8AE5ED0253C1E0683E88A69098946230F142038B6F7E644D303ACC54D63537DC5D8CDE0D9D76E4C02ADB362EA2817E0CF62B41D3B7CFA4427E4A7460526D",
+    ],
+  };
+
+  const response = await sendMessage(ws, message);
+
+  if (!response.success) {
+    throw new Error("Не удалось добавить API ключ");
+  }
+
+  return true;
+};
+
 export const loadKey = async (ws: WebSocket, cert: Certificate): Promise<string> => {
   // console.log(`🔑 Загружаем ключ для сертификата: ${cert.name}`);
   

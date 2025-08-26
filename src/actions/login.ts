@@ -1,11 +1,14 @@
 import { runAutoItScript } from "../script/auto-it";
 import { log, parseCertificateAlias } from "../utils";
-import { createSignature, getCertificates, loadKey } from "../websoket";
+import { addApiKey, createSignature, getCertificates, loadKey } from "../websoket";
 import { getTimestamp, getTokenByCertificate } from "./../api";
 
 export const login = async (ws?: any): Promise<{token: string, keyId: string}> => {
   try {
     log.info(`🚀 Начинаем логин в систему Didox`);
+
+    // 0. Добавляем API ключ
+    await addApiKey(ws);
 
     // 1. Получаем сертификаты
     const certificates = await getCertificates(ws);

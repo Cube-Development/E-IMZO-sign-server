@@ -64,7 +64,7 @@ export class EImzoSession {
       
       try {
         log.websocket("🔄 Автообновление токена и keyId...");
-        await this.login();
+        await this.init();
       } catch (err) {
         log.error(`Ошибка при автообновлении EImzoSession: ${err}`);
       }

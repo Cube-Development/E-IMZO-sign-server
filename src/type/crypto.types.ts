@@ -11,7 +11,7 @@ export interface CreateSignatureResponse {
 }
 
 export interface WebSocketMessage {
-  plugin: string;
+  plugin?: string;
   name: string;
   arguments?: any[];
 }

@@ -8,7 +8,7 @@ export const createWebSocket = (url: string): Promise<WebSocket> => {
     const ws = new WebSocket(url, {
           rejectUnauthorized: false,
           headers: {
-            'Origin': "https://didox.uz",
+            'Origin': "https://blogix.uz",
             'Host': '127.0.0.1:64443',
           }
         });
