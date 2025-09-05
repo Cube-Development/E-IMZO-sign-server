@@ -1,6 +1,6 @@
 import axios from "axios";
 import https from "https";
-import { BLOGIX_API_URL } from "../config";
+import { BLOGIX_API_KEY, BLOGIX_API_URL } from "../config";
 import { IBLogixDocuments } from "../type";
 import { log } from "../utils";
 
@@ -8,7 +8,7 @@ const agent = new https.Agent({ rejectUnauthorized: false });
 
 const blogixApi = axios.create({
   baseURL: BLOGIX_API_URL,
-  headers: { "Content-Type": "application/json", "X-Api-Key": process.env.BLOGIX_API_KEY!},
+  headers: { "Content-Type": "application/json", "X-Api-Key": BLOGIX_API_KEY!},
   timeout: 30000,
   httpsAgent: process.env.USE_INSECURE_TLS === "true" ? agent : undefined,
 });
