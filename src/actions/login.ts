@@ -1,6 +1,6 @@
 import { runAutoItScript } from "../script/auto-it";
 import { log, parseCertificateAlias } from "../utils";
-import { addApiKey, createSignature, getCertificates, loadKey } from "../websoket";
+import { addApiKey, createAttachedTokenSignature, createSignature, getCertificates, loadKey } from "../websoket";
 import { getTimestamp, getTokenByCertificate } from "./../api";
 
 export const login = async (ws?: any): Promise<{token: string, keyId: string}> => {
@@ -28,7 +28,7 @@ export const login = async (ws?: any): Promise<{token: string, keyId: string}> =
     // log.info(`Запущен AutoIt-скрипт для подписи`);
 
     // 3. Создаём подпись
-    const { pkcs7_64, signature_hex } = await createSignature(ws, keyId, pnflFromCert);
+    const { pkcs7_64, signature_hex, signer_serial_number } = await createSignature(ws, keyId, pnflFromCert);
     log.crypto(`Подпись создана`);
 
     // Ждём завершения AutoIt (опционально)
@@ -36,17 +36,19 @@ export const login = async (ws?: any): Promise<{token: string, keyId: string}> =
     // log.info(`AutoIt-скрипт завершён`);
 
     // 4. Получаем timestamp
-    const timestamp = await getTimestamp(pkcs7_64, signature_hex, "Login", "login");
+    const timestamp = await getTimestamp(pkcs7_64, signature_hex!, "Login", "login");
     log.api(`Получен timestamp: ${timestamp ? "успешно" : "ошибка"}`);
 
     if (!timestamp) {
       log.error(` Не удалось получить timestamp`);
       throw new Error("Не удалось получить timestamp");
     }
+    const {pkcs7_64: signature} = await createAttachedTokenSignature(ws, pkcs7_64, signer_serial_number, timestamp)
+
     // 5. Отправляем подпись
     const  response = await getTokenByCertificate({
         PNFL: pnflFromCert,
-        signature: timestamp,
+        signature: signature,
         lang: "ru",
       });
       

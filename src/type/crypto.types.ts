@@ -8,6 +8,7 @@ export interface Certificate {
 export interface CreateSignatureResponse {
   pkcs7_64: string;
   signature_hex: string;
+  signer_serial_number: string
 }
 
 export interface WebSocketMessage {
@@ -22,6 +23,7 @@ export interface WebSocketResponse {
   keyId?: string;
   pkcs7_64?: string;
   signature_hex?: string;
+  signer_serial_number?: string;
   certificates?: Certificate[];
 }
 

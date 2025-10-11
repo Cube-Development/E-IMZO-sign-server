@@ -90,7 +90,7 @@ export const loadKey = async (ws: WebSocket, cert: Certificate): Promise<string>
   };
 
   const response = await sendMessage(ws, message);
-  
+
   if (!response.keyId) {
     throw new Error("Не удалось загрузить ключ");
   }
@@ -104,9 +104,7 @@ export const createSignature = async (
   keyId: string,
   row: string
 ): Promise<CreateSignatureResponse> => {
-  // console.log("✍️ Создаём цифровую подпись...");
-    const base64Data = Buffer.from(row, 'utf8').toString('base64');
-  
+  const base64Data = Buffer.from(row, 'utf8').toString('base64');
   
   const message: WebSocketMessage = {
     plugin: "pkcs7",
@@ -115,15 +113,41 @@ export const createSignature = async (
   };
 
   const response = await sendMessage(ws, message);
-  
-  if (!response.pkcs7_64 || !response.signature_hex) {
+
+  if (!response?.pkcs7_64 || !response?.signature_hex || !response?.signer_serial_number) {
     throw new Error("Не удалось создать подпись");
   }
   
-  // console.log("✅ Подпись создана успешно");
   return {
     pkcs7_64: response.pkcs7_64,
     signature_hex: response.signature_hex,
+    signer_serial_number: response?.signer_serial_number
+  };
+};
+
+export const createAttachedTokenSignature = async (
+  ws: WebSocket,
+  pkcs7_64: string,
+  signer_serial_number: string,
+  tokenBase64: string,
+): Promise<CreateSignatureResponse> => {
+  
+  const message: WebSocketMessage = {
+    plugin: "pkcs7",
+    name: "attach_timestamp_token_pkcs7",
+    arguments: [pkcs7_64, signer_serial_number, tokenBase64],
+  };
+
+  const response = await sendMessage(ws, message);
+
+  if (!response?.pkcs7_64 || !response?.signer_serial_number) {
+    throw new Error("Не удалось создать подпись");
+  }
+  
+  return {
+    pkcs7_64: response.pkcs7_64,
+    signer_serial_number: response?.signer_serial_number,
+    signature_hex: ""
   };
 };
 
@@ -133,8 +157,6 @@ export const createAttachedSignature = async (
   keyId: string,
   row: string
 ): Promise<CreateSignatureResponse> => {
-  // console.log("✍️ Создаём цифровую подпись...");
-  
   const message: WebSocketMessage = {
     plugin: "pkcs7",
     name: "append_pkcs7_attached",
@@ -143,13 +165,13 @@ export const createAttachedSignature = async (
 
   const response = await sendMessage(ws, message);
   
-  if (!response.pkcs7_64 || !response.signature_hex) {
+  if (!response?.pkcs7_64 || !response?.signature_hex || !response?.signer_serial_number) {
     throw new Error("Не удалось создать подпись");
   }
   
-  // console.log("✅ Подпись создана успешно");
   return {
     pkcs7_64: response.pkcs7_64,
     signature_hex: response.signature_hex,
+    signer_serial_number: response.signer_serial_number,
   };
 };
