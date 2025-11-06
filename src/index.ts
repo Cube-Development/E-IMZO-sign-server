@@ -3,6 +3,7 @@ import 'dotenv/config';
 import bodyParser from "body-parser";
 import express from "express";
 import { ROUTES_SIGN, signRouter } from "./modules/sign-didox";
+import { ROUTES_SCREENSHOT, postScreenshotRouter } from "./modules/post-screenshot";
 import { EImzoSession } from "./modules/e-imzo";
 import { runAutoItScript, killAllAutoItProcesses } from './script/auto-it';
 import swaggerUi from "swagger-ui-express";
@@ -43,6 +44,7 @@ app.get("/", (req, res) => {
 });
 
 app.use(ROUTES_SIGN.BASE, signRouter);
+app.use(ROUTES_SCREENSHOT.BASE, postScreenshotRouter);
 
 const port = Number(process.env.PORT) || 3000;
 

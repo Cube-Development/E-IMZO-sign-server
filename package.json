@@ -6,6 +6,7 @@
   "scripts": {
     "build": "rimraf dist && tsc",
     "start": "npm run build && node dist/index.js",
+    "auth": "npx tsx src/modules/auth/telegram.auth.ts",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "loop": "npx tsx src/script/loop/index.ts"
   },
@@ -20,20 +21,22 @@
     "chalk": "^5.6.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "playwright": "^1.56.1",
     "rimraf": "^6.0.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "ts-node": "^10.9.2",
     "ws": "^8.18.3",
     "zod": "^4.0.17"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
-    "@types/node": "^24.3.0",
+    "@types/node": "^24.10.0",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/ws": "^8.18.1",
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.20.4",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   }
 }
