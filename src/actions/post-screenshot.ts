@@ -6,7 +6,7 @@ export const postScreenshot = async (url: string, user_bot_id?: string):  Promis
  try{
     const auth_path = "src/auth/telegram/user_bot_1/auth.json";
 const browser = await chromium.launch({ headless: true });
-  await ensureAuth(browser, auth_path);
+  await ensureAuth(auth_path);
 
   const context = await browser.newContext({
     storageState: auth_path,

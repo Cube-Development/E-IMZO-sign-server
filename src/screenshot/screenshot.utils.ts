@@ -1,6 +1,7 @@
 import { Browser, chromium, Page } from "playwright";
 import fs from "fs";
 import path from "path";
+import os from "os";
 import axios from "axios";
 import { log } from "../utils";
 
@@ -34,28 +35,45 @@ export function buildWebHrefFromTgaddr(tgaddr: string) {
   return "https://web.telegram.org/a/#?tgaddr=" + encodeURIComponent(raw);
 }
 
-export async function ensureAuth(browser: Browser, auth_path: string) {
+
+export async function ensureAuth(auth_path: string) {
   if (fs.existsSync(auth_path)) return;
-  const ctx = await browser.newContext();
-  const page = await ctx.newPage();
-  console.log("auth.json не найден. Войдите вручную.");
+
+  // создаём уникальную временную папку для чистого профиля
+  const tmpProfile = path.join(os.tmpdir(), `pw_profile_${Date.now()}`);
+  fs.mkdirSync(tmpProfile, { recursive: true });
+
+  // запустим persistent context в этой папке — чистый профиль гарантирован
+  const context = await chromium.launchPersistentContext(tmpProfile, { headless: false, viewport: { width: 1280, height: 800 } });
+  const page = context.pages()[0] || await context.newPage();
+
+  console.log("Открылся чистый профиль. Выполните вход в Telegram Web вручную.");
   await page.goto("https://web.telegram.org/k/");
-  console.log("После входа нажмите Enter.");
-  await new Promise<void>((r) => process.stdin.once("data", () => r()));
-  await ctx.storageState({ path: auth_path });
-  await ctx.close();
-  console.log("auth.json сохранён.");
+
+  // ждем подтверждения от пользователя
+  console.log("После успешного входа нажмите Enter в консоли.");
+  await new Promise<void>((res) => process.stdin.once("data", () => res()));
+
+  // сохраняем storageState в auth.json
+  await context.storageState({ path: auth_path });
+  await context.close();
+
+  // можно удалить временную папку профиля, если не нужен
+  // fs.rmSync(tmpProfile, { recursive: true, force: true });
+
+  console.log("auth.json сохранён из чистого профиля.");
 }
 
 export async function closeModalIfExists(page: Page) {
   try {
     const modal = await page.$("div[role='dialog'], div.modal-dialog, div.tg-dialog']");
+    console.log("Модальное окно:", modal);
     if (modal) {
       const btn = await modal.$("button, div[role='button']");
       if (btn) {
         console.log("Закрываю модальное окно...");
         await btn.click().catch(() => null);
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1000);
       }
     }
   } catch {}
@@ -128,7 +146,6 @@ export async function closeModalIfExists(page: Page) {
 export async function handleTelegramLink(page: Page, link: string): Promise<Buffer> {
   // Определяем путь для сохранения скриншота
   const screenshotPath = "screenshot.png";
-  const fullPath = path.resolve(process.cwd(), screenshotPath);
   
   log.info(`Открываю: ${link}`);
   await page.goto(link, { waitUntil: "domcontentloaded" });

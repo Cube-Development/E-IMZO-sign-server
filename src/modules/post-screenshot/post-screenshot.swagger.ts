@@ -48,7 +48,7 @@ export const CreatePostScreenShotSwagger = {
                   items: { type: 'string' }
                 },
                 example: {
-                  post_url: ['post_url is required'],
+                  post_url: ['post_url is required', 'URL должен начинаться с https://t.me/']
                 }
               }
             }
