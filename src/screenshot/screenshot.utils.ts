@@ -1,29 +1,15 @@
-import { Browser, chromium, Page } from "playwright";
-import fs from "fs";
-import path from "path";
-import os from "os";
 import axios from "axios";
+import fs from "fs";
+import os from "os";
+import path from "path";
+import { chromium, Page } from "playwright";
 import { log } from "../utils";
-
-const CONTENT_TYPE = 2;
-const BASE_URL = "https://api.blogix.uz/advblog/api";
-const COOKIE = "7c0aaSxHWOMDvlS6Jy8FMWlL8vHF3U0Pzy4Twxd9dpE"; // замени на актуальный токен
-
-
-export async function getUploadLink() {
-  const res = await axios.get(`${BASE_URL}/file/upload_link`, {
-    params: { extension: "png", content_type: CONTENT_TYPE },
-    headers: { Cookie: `adv-blog=${COOKIE}` },
-  });
-  return res.data;
-}
 
 export async function uploadScreenshot(url: string, bytes: Buffer) {
   await axios.put(url, bytes, {
-    headers: { "Content-Type": "image/png", Cookie: `adv-blog=${COOKIE}` },
+    headers: { "Content-Type": "image/png" },
   });
 }
-
 
 export function buildWebHrefFromTgaddr(tgaddr: string) {
   if (!tgaddr) return null;
@@ -66,8 +52,10 @@ export async function ensureAuth(auth_path: string) {
 
 export async function closeModalIfExists(page: Page) {
   try {
-    const modal = await page.$("div[role='dialog'], div.modal-dialog, div.tg-dialog']");
-    console.log("Модальное окно:", modal);
+    const modal = await page.$("div.Modal.error.shown.open");
+    // const modal = await page.$("div[role='dialog'], div.modal-dialog, div.tg-dialog']");
+    // const modal = await page.$("div.Modal.error")
+    // console.log("Модальное окно:", modal);
     if (modal) {
       const btn = await modal.$("button, div[role='button']");
       if (btn) {
@@ -78,70 +66,6 @@ export async function closeModalIfExists(page: Page) {
     }
   } catch {}
 }
-
-// export async function handleTelegramLink(page: Page, link: string) {
-//   console.log("Открываю:", link);
-//   await page.goto(link, { waitUntil: "domcontentloaded" });
-//   await page.waitForTimeout(700);
-
-//   // ищем кнопку "Open in Web"
-//   const btn = await page.$("a.tgme_action_web_button, a.tgme_action_button_new, a.tgme_action_button");
-//   if (!btn) {
-//     console.log("Кнопка 'Open in Web' не найдена. Считаем это обычной ссылкой.");
-//     await page.waitForTimeout(3000);
-//     await page.screenshot({ path: OUT, fullPage: true });
-//     console.log("Скриншот сохранён:", OUT);
-//     return;
-//   }
-
-//   // кнопка найдена, значит пост приватный
-//   const hrefAttr = await btn.getAttribute("href");
-//   console.log("Найдена кнопка. href =", hrefAttr);
-
-//   try {
-//     await btn.click({ timeout: 10000 });
-//     await page.waitForTimeout(600);
-//   } catch {}
-
-//   let target: string | null = null;
-//   if (hrefAttr) {
-//     if (hrefAttr.includes("web.telegram.org")) target = hrefAttr;
-//     else if (hrefAttr.includes("tgaddr") || hrefAttr.startsWith("tg://") || hrefAttr.includes("privatepost"))
-//       target = buildWebHrefFromTgaddr(hrefAttr);
-//     else if (hrefAttr.startsWith("/")) target = "https://t.me" + hrefAttr;
-//   }
-
-//   if (!target) {
-//     const html = await page.content();
-//     const m =
-//       html.match(/(tg(?:%3A|:)\/\/privatepost[^\"]+)/i) || html.match(/tgaddr=([^\"&']+)/i);
-//     if (m) {
-//       const found = m[1] ?? m[0];
-//       target = buildWebHrefFromTgaddr(found);
-//     }
-//   }
-
-//   if (!target) {
-//     console.error("Не удалось получить web.telegram.org ссылку. Останов.");
-//     return;
-//   }
-
-//   console.log("Перехожу вручную на:", target);
-//   await page.goto(target, { waitUntil: "domcontentloaded" }).catch(() => null);
-//   try {
-//     await page.waitForURL(/web\.telegram\.org/, { timeout: 15000 });
-//   } catch {
-//     console.log("Не дождались окончательного URL. Текущий:", page.url());
-//   }
-
-//   // ждём загрузку (3 сек) → убирается блюр
-//   await page.waitForTimeout(3000);
-
-//   await closeModalIfExists(page);
-
-//   await page.screenshot({ path: OUT, fullPage: true });
-//   console.log("Скриншот сохранён:", OUT);
-// }
 
 export async function handleTelegramLink(page: Page, link: string): Promise<Buffer> {
   // Определяем путь для сохранения скриншота

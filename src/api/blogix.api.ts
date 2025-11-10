@@ -34,3 +34,14 @@ export const signBlogixDocument = async (id: string): Promise<{success: boolean}
     throw new Error(`Не удалось подписать документ: ${JSON.stringify(error)}`);
   }
 };
+
+export const getUploadLink = async (): Promise<{file_name: string, url: string}> => {
+  try {
+    const CONTENT_TYPE = 2;
+    const response = await blogixApi.get(`/file/v/upload_link`, { params: { extension: "png", content_type: CONTENT_TYPE } });
+    return response?.data ;
+  } catch (error) {
+    log.error(`❌ Ошибка получения ссылки для загрузки: ${JSON.stringify(error)}`);
+    throw new Error(`Не удалось получить ссылку для загрузки: ${JSON.stringify(error)}`);
+  }
+};

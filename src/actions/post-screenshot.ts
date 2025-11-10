@@ -1,6 +1,7 @@
 import { chromium } from "playwright";
-import { ensureAuth, getUploadLink, handleTelegramLink, uploadScreenshot } from "../screenshot";
+import { ensureAuth,  handleTelegramLink, uploadScreenshot } from "../screenshot";
 import { log } from "../utils";
+import { getUploadLink } from "../api";
 
 export const postScreenshot = async (url: string, user_bot_id?: string):  Promise<{file_name: string, success: boolean}>  => {
  try{

@@ -10,6 +10,6 @@ export const PostScreenShotSchema = z.object({
     .regex(/^https:\/\/t\.me\//, "URL должен начинаться с https://t.me/")
     .openapi({
       description: "URL для скриншота",
-      example: "https://t.me/channel/post-id"
+      example: "https://t.me/ru2ch/157446"
     }),
 }).openapi(ENUM_REGISTER_ROUTE.POST_SCREENSHOT);
