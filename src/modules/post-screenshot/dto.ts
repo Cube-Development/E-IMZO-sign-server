@@ -4,12 +4,18 @@ import { ENUM_REGISTER_ROUTE } from '../../utils/swagger/register.enum';
 
 extendZodWithOpenApi(z);
 
+// Регулярное выражение для Instagram и Telegram URL
+const telegramRegex = /^https:\/\/t\.me\//;
+const instagramRegex = /^https:\/\/www\.instagram\.com/; // убрали /p/
+
 export const PostScreenShotSchema = z.object({
   post_url: z.string()
     .min(1)
-    .regex(/^https:\/\/t\.me\//, "URL должен начинаться с https://t.me/")
+    .refine((url) => telegramRegex.test(url) || instagramRegex.test(url), {
+      message: "URL должен быть либо для Telegram (https://t.me/), либо для Instagram (https://www.instagram.com/)",
+    })
     .openapi({
-      description: "URL для скриншота",
-      example: "https://t.me/ru2ch/157446"
+      description: "URL для скриншота (Telegram или Instagram)",
+      example: "https://www.instagram.com/reel/DQHfm-FiNrG/?igsh=c2ZpNG4wYXU0a3dx",
     }),
 }).openapi(ENUM_REGISTER_ROUTE.POST_SCREENSHOT);

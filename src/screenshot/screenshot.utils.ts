@@ -4,6 +4,7 @@ import os from "os";
 import path from "path";
 import { chromium, Page } from "playwright";
 import { log } from "../utils";
+import { IErrorCallback, IPostCapture } from "../type";
 
 export async function uploadScreenshot(url: string, bytes: Buffer) {
   await axios.put(url, bytes, {
@@ -125,4 +126,77 @@ export async function handleTelegramLink(page: Page, link: string): Promise<Buff
   log.info("✅ Скриншот успешно сохранён");
   
   return buffer;
+}
+
+
+
+export async function captureInstagramPostScreenshot(page: Page, postUrl: string): Promise<IPostCapture | IErrorCallback> {
+  const screenshotPath = "instagram_post_screenshot.png";  // Путь для сохранения скриншота
+
+  // Открытие ссылки на Instagram
+  // console.log(`Открываю пост: ${postUrl}`);
+  await page.goto(postUrl, { waitUntil: "domcontentloaded" });
+  const privateH2 = await page.$('h2:has-text("This account is private")');
+
+  if (privateH2) {
+    log.info(`Аккаунт приватный | Post Url = ${postUrl}`);
+    return {
+      success: false,
+      code: 1002,
+      message: "PRIVATE_ACCOUNT_INSTAGRAM",
+    };
+  } else {
+    log.info(`Аккаунт открытый | Post Url = ${postUrl}`);
+  }
+
+  // Ждем, пока контент страницы загрузится
+  await page.waitForTimeout(3000); // Подождать 3 секунды (можно увеличить время, если необходимо)
+  await acceptInstagramCookiesIfExists(page);
+  await page.waitForTimeout(3000); 
+  await closeInstagramDialogIfExists(page);
+  // Делаем скриншот всей страницы
+  // console.log("Делаю скриншот страницы...");
+  const buffer = await page.screenshot({
+    path: screenshotPath,   // Путь для сохранения скриншота
+    fullPage: true,         // Скриншот всей страницы
+    type: 'png',            // Тип файла
+    omitBackground: true,   // Прозрачный фон (если нужно)
+    clip: { x: 0, y: 0, width: 1280, height: 800 } 
+  });
+
+  // console.log("✅ Скриншот успешно сохранён");
+  return {buffer, success: true};  // Возвращаем буфер скриншота
+}
+
+export async function acceptInstagramCookiesIfExists(page: Page) {
+  try {
+    // Ищем кнопку по точному тексту
+    const cookieButton = page.locator('button', { hasText: 'Allow all cookies' });
+    if (await cookieButton.count() > 0) {
+      // log.info("Найдена кнопка 'Allow all cookies', нажимаем...");
+      await cookieButton.click();
+      // Ждём скрытия модалки
+      await page.waitForTimeout(1000);
+      // log.info("✅ Куки приняты");
+    } else {
+      log.error("Кнопка 'Allow all cookies' не найдена, продолжаем");
+    }
+  } catch (e) {
+    log.error(`Ошибка при попытке принять куки: ${JSON.stringify(e)}`);
+  }
+}
+
+
+export async function closeInstagramDialogIfExists(page: Page) {
+  // Ищем диалоговое окно
+  const dialog = await page.$('div[role="dialog"]');
+if (dialog) {
+  // Ищем svg с title="Close" внутри диалога
+   const btn = await dialog.$('div[role="button"] svg');
+  if (btn) {
+    // Кликаем по родительскому div кнопки
+    const btnWrapper = await btn.evaluateHandle(node => node.parentElement);
+    await btnWrapper.asElement()?.click().catch(() => null);
+  }
+}
 }

@@ -11,8 +11,9 @@ export const createPostScreenshot = async (req: Request, res: Response) => {
         const errors = z.treeifyError(parsed.error);
 
         return res.status(422).json({
-            status: "error",
-            message: "Ошибка валидации",
+            success: false,
+            code: 1001,
+            message: "VALIDATION_ERROR",
             errors: errors?.properties,
         });
     }
@@ -23,7 +24,11 @@ export const createPostScreenshot = async (req: Request, res: Response) => {
         
         const result = await postScreenshot(post_url);
 
-        if (!result.success) throw new Error("Не удалось создать скриншот");
+        if (!result.success) {
+            return res.status(400).json({
+                ...result
+            });
+        };
 
         res.json({
             ...result
@@ -33,7 +38,9 @@ export const createPostScreenshot = async (req: Request, res: Response) => {
         log.error(`❌ Ошибка создания скриншота | Ссылка на пост: ${post_url} | Message: ${JSON.stringify(error)}`);
 
         res.status(error?.status || 500).json({
-            status: "error",
+            success: false,
+            code: 1004,
+            message: "SCREENSHOT_FAILED",
             data: error.data || String(error),
         });
     }
