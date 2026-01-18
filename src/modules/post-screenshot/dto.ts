@@ -18,4 +18,9 @@ export const PostScreenShotSchema = z.object({
       description: "URL для скриншота (Telegram или Instagram)",
       example: "https://www.instagram.com/reel/DQHfm-FiNrG/?igsh=c2ZpNG4wYXU0a3dx",
     }),
-}).openapi(ENUM_REGISTER_ROUTE.POST_SCREENSHOT);
+  user_bot_id: z.string().optional().openapi({
+    description: "ID бота Telegram для авторизации",
+    example: "7697061334",
+  })
+    })
+  .openapi(ENUM_REGISTER_ROUTE.POST_SCREENSHOT)

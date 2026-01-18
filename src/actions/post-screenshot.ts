@@ -53,11 +53,9 @@ export const postScreenshot = async (url: string, user_bot_id?: string): Promise
   const browser = await chromium.launch({ headless: true });
   let screenshot: Buffer;
 
-  try {
-    // Обработка для Telegram (нужно пройти аутентификацию)
     if (isTelegramUrl(url)) {
-      log.info(`Обработка Telegram URL | Post Url = ${url}`);
-      const auth_path = "src/auth/telegram/user_bot_1/auth.json";
+      log.info(`Обработка Telegram URL | Post Url = ${url} | User Bot ID = ${user_bot_id}`);
+      const auth_path = `src/auth/telegram/user_bot_${user_bot_id || 1}/auth.json`;
       await ensureAuth(auth_path); // Проверка или создание сессии
 
       const context = await browser.newContext({
@@ -100,15 +98,10 @@ export const postScreenshot = async (url: string, user_bot_id?: string): Promise
 
     log.success(`Успешно загружено! | Post Url = ${url} | File name = ${uploadData.file_name}`);
 
+    await browser.close();
+
     return {
       success: true,
       file_name: uploadData.file_name,
     };
-  } catch (error: any) {
-    log.error(`💥 Ошибка при создании скриншота: ${JSON.stringify(error?.data)}`);
-    return { success: false, code: 1004, message: "SCREENSHOT_FAILED" };
-  }
-  finally{
-    await browser.close();
-  }
 };

@@ -18,12 +18,11 @@ export const createPostScreenshot = async (req: Request, res: Response) => {
         });
     }
 
-    const { post_url } = parsed.data;
+    const { post_url, user_bot_id } = parsed.data;
     
     try {
         
-        const result = await postScreenshot(post_url);
-
+        const result = await postScreenshot(post_url, user_bot_id);
         if (!result.success) {
             return res.status(400).json({
                 ...result
