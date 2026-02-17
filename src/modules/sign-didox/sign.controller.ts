@@ -21,8 +21,8 @@ export const createSignDidoxDocument = async (req: Request, res: Response) => {
     const { doc_id, owner } = parsed.data;
     
     try {
-        
-        const ws = eImzo.getWs();
+        // getActiveWs() автоматически переподключится если WS упал
+        const ws = await eImzo.getActiveWs();
         const keyId = eImzo.getKeyId();
         const result = await signDocument(doc_id, owner, ws, keyId);
 

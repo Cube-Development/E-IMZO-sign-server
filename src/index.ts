@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 import bodyParser from "body-parser";
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { ROUTES_SIGN, signRouter } from "./modules/sign-didox";
 import { ROUTES_SCREENSHOT, postScreenshotRouter } from "./modules/post-screenshot";
 import { EImzoSession } from "./modules/e-imzo";
@@ -16,6 +17,20 @@ app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
+// ==========================================
+// Rate Limiting (express-rate-limit)
+// ==========================================
+const signLimiter = rateLimit({
+  windowMs: 1000,               // окно = 1 секунда
+  max: 10,                      // макс. 10 запросов в секунду
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: "error",
+    message: "Слишком много запросов. Макс. 10 RPS. Повторите позже.",
+  },
+});
+
 // Подключаем Swagger UI
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
@@ -24,7 +39,6 @@ if (USE_AUTOIT_DEMON) {
   runAutoItScript("src/script/auto-it/auto-sign-demon.au3", true)
     .then(() => log.warn("AutoIt-демон завершился (неожиданно)"))
     .catch(err => {
-      // Игнорируем ошибки при принудительном завершении
       if (!err.message.includes("завершился с кодом: null")) {
         log.error(`Ошибка демона AutoIt: ${err}`);
       }
@@ -43,35 +57,55 @@ app.get("/", (req, res) => {
   res.send("SERVER IS STARTED");
 });
 
-app.use(ROUTES_SIGN.BASE, signRouter);
+// ==========================================
+// Health Check
+// ==========================================
+app.get("/health", (req, res) => {
+  const wsReady = eImzo.isWsReady();
+  const sessionActive = eImzo.isSessionActive();
+  const status = sessionActive && wsReady ? 200 : 503;
+
+  res.status(status).json({
+    status: status === 200 ? "ok" : "degraded",
+    ws: wsReady,
+    session: sessionActive,
+  });
+});
+
+app.use(ROUTES_SIGN.BASE, signLimiter, signRouter);
 app.use(ROUTES_SCREENSHOT.BASE, postScreenshotRouter);
 
 const port = Number(process.env.PORT) || 3000;
 
-// Обработчики завершения процесса
+// ==========================================
+// Graceful Shutdown с drain
+// ==========================================
+const server = app.listen(port, "0.0.0.0", () => {
+  log.info(`Server is running on port ${port}`);
+});
+
 const gracefulShutdown = async (signal: string) => {
- log.warn(`Получен сигнал ${signal}. Дождитесь остановки сервера. Завершаем AutoIt процессы...`);
- killAllAutoItProcesses();
- 
- // Обратный отсчет
- for (let i = 3; i > 0; i--) {
-   log.info(`Завершение через ${i}...`);
-   await new Promise(resolve => setTimeout(resolve, 1000));
- }
- 
- log.success("Сервер остановлен ✅");
- process.exit(0);
+  log.warn(`Получен сигнал ${signal}. Останавливаем сервер...`);
+
+  // Перестаём принимать новые соединения
+  server.close(() => {
+    log.info("HTTP сервер закрыт (новые запросы не принимаются)");
+  });
+
+  // Закрываем EImzo сессию
+  await eImzo.close();
+
+  // Убиваем AutoIt процессы
+  killAllAutoItProcesses();
+
+  log.success("Сервер остановлен ✅");
+  process.exit(0);
 };
 
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGQUIT', () => gracefulShutdown('SIGQUIT'));
 
-// При неожиданном завершении
 process.on('exit', () => {
   killAllAutoItProcesses();
-});
-
-app.listen(port, "0.0.0.0", () => {
-  log.info(`Server is running on port ${port}`);
 });

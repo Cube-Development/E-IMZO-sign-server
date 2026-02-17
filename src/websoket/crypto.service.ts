@@ -1,9 +1,26 @@
 import WebSocket from "ws";
+import { Mutex } from "async-mutex";
 import { Certificate, WebSocketMessage, WebSocketResponse, CreateSignatureResponse } from "../type";
 
-const sendMessage = (ws: WebSocket, message: WebSocketMessage): Promise<WebSocketResponse> => {
+/**
+ * Mutex для WebSocket-канала.
+ * Гарантирует: один запрос → один ответ, без пересечений.
+ */
+const wsMutex = new Mutex();
+
+/**
+ * Отправка одного сообщения через WebSocket.
+ * Вызывается только под wsMutex.acquire().
+ */
+const sendMessageRaw = (ws: WebSocket, message: WebSocketMessage): Promise<WebSocketResponse> => {
   return new Promise((resolve, reject) => {
+    if (ws.readyState !== WebSocket.OPEN) {
+      reject(new Error("WebSocket не подключен"));
+      return;
+    }
+
     const timeout = setTimeout(() => {
+      ws.off("message", messageHandler);
       reject(new Error("Таймаут запроса к криптосервису"));
     }, 30000);
 
@@ -28,7 +45,6 @@ const sendMessage = (ws: WebSocket, message: WebSocketMessage): Promise<WebSocke
     
     try {
       ws.send(JSON.stringify(message));
-      // console.log("📤 Отправлено сообщение:", message.name);
     } catch (error) {
       clearTimeout(timeout);
       ws.off("message", messageHandler);
@@ -37,10 +53,21 @@ const sendMessage = (ws: WebSocket, message: WebSocketMessage): Promise<WebSocke
   });
 };
 
+/**
+ * Отправка сообщения через Mutex — потокобезопасная обёртка.
+ * Все публичные функции используют эту обёртку.
+ */
+const sendMessage = async (ws: WebSocket, message: WebSocketMessage): Promise<WebSocketResponse> => {
+  const release = await wsMutex.acquire();
+  try {
+    return await sendMessageRaw(ws, message);
+  } finally {
+    release();
+  }
+};
+
 
 export const getCertificates = async (ws: WebSocket): Promise<Certificate[]> => {
-  // console.log("📋 Получаем список сертификатов...");
-  
   const message: WebSocketMessage = {
     plugin: "pfx",
     name: "list_all_certificates",
@@ -52,7 +79,6 @@ export const getCertificates = async (ws: WebSocket): Promise<Certificate[]> => 
     throw new Error("Сертификаты не найдены");
   }
   
-  // console.log(`✅ Найдено ${response.certificates.length} сертификатов`);
   return response.certificates;
 };
 
@@ -81,8 +107,6 @@ export const addApiKey = async (ws: WebSocket): Promise<boolean> => {
 };
 
 export const loadKey = async (ws: WebSocket, cert: Certificate): Promise<string> => {
-  // console.log(`🔑 Загружаем ключ для сертификата: ${cert.name}`);
-  
   const message: WebSocketMessage = {
     plugin: "pfx",
     name: "load_key",
@@ -95,7 +119,6 @@ export const loadKey = async (ws: WebSocket, cert: Certificate): Promise<string>
     throw new Error("Не удалось загрузить ключ");
   }
   
-  // console.log("✅ Ключ загружен успешно");
   return response.keyId;
 };
 
@@ -104,10 +127,8 @@ export const createSignature = async (
   keyId: string,
   row: string
 ): Promise<CreateSignatureResponse> => {
-  // console.log("✍️ Создаём цифровую подпись...");
-    const base64Data = Buffer.from(row, 'utf8').toString('base64');
-  
-  
+  const base64Data = Buffer.from(row, 'utf8').toString('base64');
+
   const message: WebSocketMessage = {
     plugin: "pkcs7",
     name: "create_pkcs7",
@@ -120,7 +141,6 @@ export const createSignature = async (
     throw new Error("Не удалось создать подпись");
   }
   
-  // console.log("✅ Подпись создана успешно");
   return {
     pkcs7_64: response.pkcs7_64,
     signature_hex: response.signature_hex,
@@ -133,8 +153,6 @@ export const createAttachedSignature = async (
   keyId: string,
   row: string
 ): Promise<CreateSignatureResponse> => {
-  // console.log("✍️ Создаём цифровую подпись...");
-  
   const message: WebSocketMessage = {
     plugin: "pkcs7",
     name: "append_pkcs7_attached",
@@ -147,7 +165,6 @@ export const createAttachedSignature = async (
     throw new Error("Не удалось создать подпись");
   }
   
-  // console.log("✅ Подпись создана успешно");
   return {
     pkcs7_64: response.pkcs7_64,
     signature_hex: response.signature_hex,

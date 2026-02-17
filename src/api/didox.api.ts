@@ -33,6 +33,28 @@ authApi.interceptors.request.use(
   }
 );
 
+// Retry-interceptor: при 401 ждём обновления токена и повторяем запрос
+authApi.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error?.response?.status === 401 && !originalRequest._retried) {
+      originalRequest._retried = true;
+      log.warn("🔄 Получен 401, ожидание обновления токена и повтор запроса...");
+      
+      // Даём время auto-refresh обновить токен
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Подставляем актуальный токен
+      originalRequest.headers['user-key'] = authToken;
+      return authApi(originalRequest);
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // Отдельный инстанс для получения токена (без автоматического добавления токена)
 const api = axios.create({
   baseURL: DIDOX_URL,
