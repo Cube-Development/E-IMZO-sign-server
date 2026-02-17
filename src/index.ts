@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import { ROUTES_SIGN, signRouter } from "./modules/sign-didox";
 import { ROUTES_SCREENSHOT, postScreenshotRouter } from "./modules/post-screenshot";
 import { EImzoSession } from "./modules/e-imzo";
+import { closeBrowser } from "./actions/post-screenshot";
 import { runAutoItScript, killAllAutoItProcesses } from './script/auto-it';
 import swaggerUi from "swagger-ui-express";
 import { openApiDocument } from './utils/swagger';
@@ -21,13 +22,24 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Rate Limiting (express-rate-limit)
 // ==========================================
 const signLimiter = rateLimit({
-  windowMs: 1000,               // окно = 1 секунда
-  max: 10,                      // макс. 10 запросов в секунду
+  windowMs: 1000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     status: "error",
     message: "Слишком много запросов. Макс. 10 RPS. Повторите позже.",
+  },
+});
+
+const screenshotLimiter = rateLimit({
+  windowMs: 1000,
+  max: 10,                       // макс. 10 RPS
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: "error",
+    message: "Слишком много запросов на скриншоты. Макс. 10 RPS.",
   },
 });
 
@@ -73,7 +85,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use(ROUTES_SIGN.BASE, signLimiter, signRouter);
-app.use(ROUTES_SCREENSHOT.BASE, postScreenshotRouter);
+app.use(ROUTES_SCREENSHOT.BASE, screenshotLimiter, postScreenshotRouter);
 
 const port = Number(process.env.PORT) || 3000;
 
@@ -94,6 +106,9 @@ const gracefulShutdown = async (signal: string) => {
 
   // Закрываем EImzo сессию
   await eImzo.close();
+
+  // Закрываем shared Chromium
+  await closeBrowser();
 
   // Убиваем AutoIt процессы
   killAllAutoItProcesses();

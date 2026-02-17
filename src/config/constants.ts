@@ -51,3 +51,6 @@ export const USE_AUTOIT_DEMON = process.env.USE_AUTOIT_DEMON! === 'true';
 // Путь к исполняемому файлу AutoIT (по умолчанию стандартная установка в Windows)
 export const AUTOIT_APP_PATH =
   process.env.AUTOIT_APP_PATH || "C:\\Program Files (x86)\\AutoIt3\\AutoIt3.exe";
+
+// Тестирование скриншотов
+export const TEST_SCREENSHOTS = process.env.TEST_SCREENSHOTS === 'true';
