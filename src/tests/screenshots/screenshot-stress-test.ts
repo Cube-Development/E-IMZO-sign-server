@@ -6,13 +6,15 @@ import { log } from '../../utils';
 
 const API_URL = 'http://localhost:80/screenshot/post';
 const TEST_URLS = [
-    'https://t.me/ru2ch/164258',
-    'https://t.me/incrypted/30479',
-    'https://t.me/if_market_news/80262',
-    'https://t.me/ulbi_tv/281',
+    'https://www.instagram.com/p/DU4QYqpgnpX/',
+    "https://www.instagram.com/reel/DQHfm-FiNrG/?igsh=c2ZpNG4wYXU0a3dx",
+    // 'https://www.instagram.com/p/DUlVdMajad8/?img_index=1',
+    // 'https://www.instagram.com/p/DQHfm-FiNrG/?img_index=3',
+    // 'https://www.instagram.com/p/DQHfm-FiNrG/?img_index=4',
+    // 'https://www.instagram.com/p/DQHfm-FiNrG/?img_index=5',
 ];
 
-const NUM_CONCURRENT_REQUESTS = 10;
+const NUM_CONCURRENT_REQUESTS = 2;
 
 // Настройка ретраев для обхода Rate Limiter (5 RPS)
 axiosRetry(axios, { 

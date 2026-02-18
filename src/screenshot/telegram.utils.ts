@@ -32,7 +32,7 @@ export function tryResolveDirectTelegramKLink(link: string): string | null {
   return null;
 }
 
-export async function ensureAuth(auth_path: string) {
+export async function ensureTelegramAuth(auth_path: string) {
   if (fs.existsSync(auth_path)) return;
 
   const tmpProfile = path.join(os.tmpdir(), `pw_profile_${Date.now()}`);

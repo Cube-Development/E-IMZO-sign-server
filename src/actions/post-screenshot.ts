@@ -1,6 +1,6 @@
 import { Browser, chromium } from "playwright";
 import { Semaphore } from "async-mutex";
-import { captureInstagramPostScreenshot, ensureAuth, handleTelegramLink, uploadScreenshot } from "../screenshot";
+import { captureInstagramPostScreenshot, ensureInstagramAuth, ensureTelegramAuth, handleTelegramLink, uploadScreenshot } from "../screenshot";
 import { log } from "../utils";
 import { getUploadLink } from "../api";
 import { IErrorCallback, IPostCapture, IPostScreenshotResponse } from "../type";
@@ -43,10 +43,13 @@ export const postScreenshot = async (url: string, user_bot_id?: string): Promise
     const browser = await getBrowser();
     let screenshot: Buffer;
 
+    // Запускаем получение upload link параллельно со скриншотом
+    const uploadLinkPromise = getUploadLink();
+
     if (isTelegramUrl(url)) {
       log.info(`Обработка Telegram URL | Post Url = ${url} | User Bot ID = ${user_bot_id}`);
       const auth_path = `src/auth/telegram/user_bot_${user_bot_id || 1}/auth.json`;
-      await ensureAuth(auth_path);
+      await ensureTelegramAuth(auth_path);
 
       const context = await browser.newContext({
         storageState: auth_path,
@@ -62,7 +65,13 @@ export const postScreenshot = async (url: string, user_bot_id?: string): Promise
 
     } else if (isInstagramUrl(url)) {
       log.info(`Обработка Instagram URL | Post Url = ${url}`);
-      const context = await browser.newContext({ viewport: { width: 1280, height: 1600 } });
+      const auth_path = `src/auth/instagram/auth.json`;
+      await ensureInstagramAuth(auth_path);
+
+      const context = await browser.newContext({ 
+        storageState: auth_path,
+        viewport: { width: 1280, height: 1200 } 
+      });
 
       try {
         const page = await context.newPage();
@@ -80,9 +89,7 @@ export const postScreenshot = async (url: string, user_bot_id?: string): Promise
       return { success: false, code: 1003, message: "UNSUPPORTED_URL" };
     }
 
-    log.info(`Скриншот сделан, получаем ссылку для загрузки... | Post Url = ${url}`);
-    const uploadData = await getUploadLink();
-
+    const uploadData = await uploadLinkPromise;
     log.info(`Загружаем скриншот в хранилище... | Post Url = ${url} | File name = ${uploadData.file_name}`);
     await uploadScreenshot(uploadData.url, screenshot as Buffer);
 
