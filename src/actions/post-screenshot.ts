@@ -8,7 +8,7 @@ import { IErrorCallback, IPostCapture, IPostScreenshotResponse } from "../type";
 // ==========================================
 // Browser Pool — один Chromium на все запросы
 // ==========================================
-const MAX_CONCURRENT_SCREENSHOTS = 10;
+const MAX_CONCURRENT_SCREENSHOTS = 5;
 const screenshotSemaphore = new Semaphore(MAX_CONCURRENT_SCREENSHOTS);
 
 let sharedBrowser: Browser | null = null;

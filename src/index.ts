@@ -34,7 +34,7 @@ const signLimiter = rateLimit({
 
 const screenshotLimiter = rateLimit({
   windowMs: 1000,
-  max: 10,                       // макс. 10 RPS
+  max: 5,                       // макс. 10 RPS
   standardHeaders: true,
   legacyHeaders: false,
   message: {

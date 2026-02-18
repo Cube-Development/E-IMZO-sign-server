@@ -12,7 +12,7 @@ const TEST_URLS = [
     'https://t.me/ulbi_tv/281',
 ];
 
-const NUM_CONCURRENT_REQUESTS = 1;
+const NUM_CONCURRENT_REQUESTS = 10;
 
 // Настройка ретраев для обхода Rate Limiter (5 RPS)
 axiosRetry(axios, { 
