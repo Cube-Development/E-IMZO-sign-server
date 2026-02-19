@@ -6,17 +6,25 @@ import rateLimit from "express-rate-limit";
 import { ROUTES_SIGN, signRouter } from "./modules/sign-didox";
 import { ROUTES_SCREENSHOT, postScreenshotRouter } from "./modules/post-screenshot";
 import { EImzoSession } from "./modules/e-imzo";
-import { closeBrowser } from "./actions/post-screenshot";
+import { ScreenshotService } from './actions/post-screenshot';
 import { runAutoItScript, killAllAutoItProcesses } from './script/auto-it';
 import swaggerUi from "swagger-ui-express";
 import { openApiDocument } from './utils/swagger';
 import { USE_AUTOIT_DEMON } from './config';
 import { log } from './utils';
 
+export const screenshotService = ScreenshotService.getInstance();
+
+/** Обертка для контроллера */
+export const postScreenshot = (url: string, user_bot_id?: string) => screenshotService.capture(url, user_bot_id);
+
 const app = express();
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+
+// Инициализация браузера и сессий при старте
+screenshotService.init().catch((err: any) => log.error(`Ошибка прогрева браузера: ${err}`));
 
 // ==========================================
 // Rate Limiting (express-rate-limit)
@@ -108,7 +116,7 @@ const gracefulShutdown = async (signal: string) => {
   await eImzo.close();
 
   // Закрываем shared Chromium
-  await closeBrowser();
+  await screenshotService.close();
 
   // Убиваем AutoIt процессы
   killAllAutoItProcesses();

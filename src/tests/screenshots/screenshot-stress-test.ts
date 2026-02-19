@@ -15,13 +15,17 @@ const TEST_URLS = [
     "https://t.me/ru2ch/164322",
     "https://t.me/if_market_news/80316",
     "https://t.me/if_market_news/80216",
+    "https://t.me/ru2ch/164342",
+    "https://t.me/ru2ch/164322",
+    "https://t.me/if_market_news/80316",
+    "https://t.me/if_market_news/80216",
     'https://www.instagram.com/p/DUlVdMajad8/?img_index=1',
     'https://www.instagram.com/p/DQHfm-FiNrG/?img_index=3',
     'https://www.instagram.com/p/DQHfm-FiNrG/?img_index=4',
     // 'https://www.instagram.com/p/DQHfm-FiNrG/?img_index=5',
 ];
 
-const NUM_CONCURRENT_REQUESTS = 10;
+const NUM_CONCURRENT_REQUESTS = 5;
 
 // Настройка ретраев для обхода Rate Limiter (5 RPS)
 axiosRetry(axios, { 
