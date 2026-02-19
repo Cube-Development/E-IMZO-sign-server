@@ -1,5 +1,6 @@
 import https from "https";
 import axios from "axios";
+import axiosRetry from "axios-retry";
 import { log } from "../utils";
 import { DIDOX_URL } from "../config";
 import { IGetTokenRequest, IGetTokenResponse } from "../type";
@@ -11,6 +12,26 @@ const authApi = axios.create({
   headers: { "Content-Type": "application/json" },
   timeout: 30000,
   httpsAgent: process.env.USE_INSECURE_TLS === "true" ? agent : undefined,
+});
+
+// Retry при 429/502/503/сетевых ошибках (3 попытки, задержка 1с)
+axiosRetry(authApi, {
+  retries: 3,
+  retryDelay: () => 1000,
+  retryCondition: (error) => {
+    const status = error.response?.status;
+    return (
+      axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+      status === 429 ||
+      status === 502 ||
+      status === 503
+    );
+  },
+  onRetry: (count, error) => {
+    log.warn(
+      `⚠️ Didox API retry ${count}/3: ${error.response?.status || error.message}`
+    );
+  },
 });
 
 // Переменная для хранения токена
