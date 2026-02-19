@@ -9,13 +9,16 @@ const TEST_URLS = [
     'https://www.instagram.com/p/DU4QYqpgnpX/',
     "https://www.instagram.com/reel/DQHfm-FiNrG/?igsh=c2ZpNG4wYXU0a3dx",
     "https://www.instagram.com/p/DUVj4Y3jcFL/",
-    // "https://t.me/uzbekfintech/3254",
-    // "https://t.me/uzbekfintech/3248",
-    // "https://t.me/ru2ch/164342"
+    "https://t.me/uzbekfintech/3254",
+    "https://t.me/uzbekfintech/3248",
+    "https://t.me/ru2ch/164342",
+    "https://t.me/ru2ch/164322",
+    "https://t.me/if_market_news/80316",
+    "https://t.me/if_market_news/80216",
     'https://www.instagram.com/p/DUlVdMajad8/?img_index=1',
     'https://www.instagram.com/p/DQHfm-FiNrG/?img_index=3',
     'https://www.instagram.com/p/DQHfm-FiNrG/?img_index=4',
-    'https://www.instagram.com/p/DQHfm-FiNrG/?img_index=5',
+    // 'https://www.instagram.com/p/DQHfm-FiNrG/?img_index=5',
 ];
 
 const NUM_CONCURRENT_REQUESTS = 10;

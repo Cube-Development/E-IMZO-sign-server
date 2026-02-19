@@ -16,6 +16,10 @@ let browserPromise: Promise<Browser> | null = null;
 let instagramContext: BrowserContext | null = null;
 let igContextPromise: Promise<BrowserContext> | null = null;
 
+// Пул контекстов для Telegram ботов: Map<user_bot_id, BrowserContext>
+const telegramContexts = new Map<string, BrowserContext>();
+const tgContextPromises = new Map<string, Promise<BrowserContext>>();
+
 async function getBrowser(): Promise<Browser> {
   if (sharedBrowser?.isConnected()) return sharedBrowser;
   if (browserPromise) return browserPromise;
@@ -49,8 +53,38 @@ async function getInstagramContext(browser: Browser, authPath: string): Promise<
   return igContextPromise;
 }
 
+/** Получение или создание контекста для конкретного Telegram-бота */
+async function getTelegramContext(browser: Browser, botId: string, authPath: string): Promise<BrowserContext> {
+  const existing = telegramContexts.get(botId);
+  if (existing) return existing;
+
+  const existingPromise = tgContextPromises.get(botId);
+  if (existingPromise) return existingPromise;
+
+  const promise = browser.newContext({
+    storageState: authPath,
+    viewport: { width: 1280, height: 1600 },
+  }).then(ctx => {
+    telegramContexts.set(botId, ctx);
+    tgContextPromises.delete(botId);
+    log.info(`📸 Telegram context для бота ${botId} создан (кеширование включено)`);
+    return ctx;
+  });
+
+  tgContextPromises.set(botId, promise);
+  return promise;
+}
+
 /** Закрытие shared browser (для graceful shutdown) */
 export async function closeBrowser(): Promise<void> {
+  // Закрываем все Telegram контексты
+  for (const [botId, context] of telegramContexts) {
+    await context.close().catch(() => null);
+    log.info(`📸 Telegram context для бота ${botId} закрыт`);
+  }
+  telegramContexts.clear();
+  tgContextPromises.clear();
+
   if (instagramContext) {
     await instagramContext.close().catch(() => null);
     instagramContext = null;
@@ -77,20 +111,19 @@ export const postScreenshot = async (url: string, user_bot_id?: string): Promise
     const uploadLinkPromise = getUploadLink();
 
     if (isTelegramUrl(url)) {
-      log.info(`Обработка Telegram URL | Post Url = ${url} | User Bot ID = ${user_bot_id}`);
-      const auth_path = `src/auth/telegram/user_bot_${user_bot_id || 1}/auth.json`;
+      const botId = user_bot_id || "1";
+      log.info(`Обработка Telegram URL | Post Url = ${url} | User Bot ID = ${botId}`);
+      const auth_path = `src/auth/telegram/user_bot_${botId}/auth.json`;
       await ensureTelegramAuth(auth_path);
 
-      const context = await browser.newContext({
-        storageState: auth_path,
-        viewport: { width: 1280, height: 1600 },
-      });
+      // Используем пул контекстов для Telegram (кеширование + изоляция сессий)
+      const context = await getTelegramContext(browser, botId, auth_path);
+      const page = await context.newPage();
 
       try {
-        const page = await context.newPage();
         screenshot = await handleTelegramLink(page, url);
       } finally {
-        await context.close();
+        await page.close();
       }
 
     } else if (isInstagramUrl(url)) {
