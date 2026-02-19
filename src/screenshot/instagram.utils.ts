@@ -56,11 +56,10 @@ export async function captureInstagramPostScreenshot(page: Page, postUrl: string
   urlObj.pathname = urlObj.pathname.replace(/\/reels\/|\/reel\//, '/p/');
   urlObj.search = ''; 
   const normalizedUrl = urlObj.toString();
-  
-  // Принудительный таймаут на уровне страницы, чтобы 30с нигде не всплыло
-  page.setDefaultTimeout(10000);
 
   // Блокировка тяжелых/ненужных ресурсов для ускорения загрузки
+  // ВАЖНО: НЕ блокировать facebook.com и fbcdn.net/rsrc.php — 
+  // через них Instagram загружает JS-бандлы и CSS, без которых React не монтируется
   await page.route('**/*', (route) => {
     const url = route.request().url();
     const type = route.request().resourceType();
@@ -68,8 +67,6 @@ export async function captureInstagramPostScreenshot(page: Page, postUrl: string
     if (
       ['font'].includes(type) || 
       url.includes('google-analytics') || 
-      url.includes('facebook.com') || 
-      url.includes('fbcdn.net/rsrc.php') || 
       url.includes('/logging/') ||
       url.includes('/api/v1/ads/')
     ) {
@@ -79,7 +76,15 @@ export async function captureInstagramPostScreenshot(page: Page, postUrl: string
   });
 
   log.info(`Переход на URL: ${normalizedUrl}`);
-  await page.goto(normalizedUrl, { waitUntil: "domcontentloaded" });
+  try {
+    await page.goto(normalizedUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+  } catch (navError: any) {
+    if (navError.name === 'TimeoutError') {
+      log.error(`❌ Страница не загрузилась за 30с: ${normalizedUrl}`);
+      return { success: false, code: 1006, message: "PAGE_LOAD_TIMEOUT" };
+    }
+    throw navError;
+  }
 
   // 2. Инъекция CSS для скрытия оверлея ошибки (надежнее, чем JS)
   await page.addStyleTag({
@@ -125,7 +130,7 @@ export async function captureInstagramPostScreenshot(page: Page, postUrl: string
       const videosReady = videos.length === 0 || videos.every(v => !!v.poster || v.readyState >= 1);
 
       return imgsLoaded && videosReady;
-    }, { timeout: 7000, polling: 500 });
+    }, null, { timeout: 7000, polling: 500 });
     log.info("✅ Медиа контент загружен");
   } catch (e: any) {
     log.warn(`⚠️ Тайм-аут ожидания медиа (7с): ${e.message}. Идем дальше.`);

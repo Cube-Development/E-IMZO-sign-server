@@ -1,4 +1,5 @@
 import axios from "axios";
+import axiosRetry from "axios-retry";
 import https from "https";
 import { BLOGIX_API_KEY, BLOGIX_API_URL } from "../config";
 import { IBLogixDocuments } from "../type";
@@ -11,6 +12,19 @@ const blogixApi = axios.create({
   headers: { "Content-Type": "application/json", "X-Api-Key": BLOGIX_API_KEY!},
   timeout: 30000,
   httpsAgent: process.env.USE_INSECURE_TLS === "true" ? agent : undefined,
+});
+
+// Retry при 502/503/сетевых ошибках (3 попытки, экспоненциальная задержка)
+axiosRetry(blogixApi, {
+  retries: 3,
+  retryDelay: () => 1000,
+  retryCondition: (error) => {
+    const status = error.response?.status;
+    return axiosRetry.isNetworkOrIdempotentRequestError(error) || status === 502 || status === 503;
+  },
+  onRetry: (count, error) => {
+    log.warn(`⚠️ Blogix API retry ${count}/3: ${error.response?.status || error.message}`);
+  },
 });
 
 
