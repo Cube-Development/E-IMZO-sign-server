@@ -80,9 +80,31 @@ export class ScreenshotService {
             this.sharedBrowser = b;
             this.browserPromise = null;
             log.info("🌐 Chromium запущен (shared instance)");
+
+            // Изоляция: при падении Chromium сбрасываем состояние без краша процесса
+            b.on('disconnected', () => {
+                log.warn("⚠️ Chromium отключился неожиданно, сбрасываем состояние...");
+                this.resetBrowserState();
+            });
+
             return b;
+        }).catch(err => {
+            this.browserPromise = null;
+            log.error(`❌ Не удалось запустить Chromium: ${err}`);
+            throw err;
         });
         return this.browserPromise;
+    }
+
+    /** Сброс состояния при падении браузера — контексты становятся невалидными */
+    private resetBrowserState(): void {
+        this.sharedBrowser = null;
+        this.browserPromise = null;
+        this.instagramContext = null;
+        this.igContextPromise = null;
+        this.telegramContexts.clear();
+        this.tgContextPromises.clear();
+        log.warn("🔄 Состояние браузера сброшено, следующий запрос создаст новый инстанс");
     }
 
     private async getInstagramContext(browser: Browser, authPath: string): Promise<BrowserContext> {

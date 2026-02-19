@@ -83,7 +83,7 @@ export class LoopSign {
         const { keyId, success } = await signDocument(
             document.doc_id, 
             document.owner, 
-            this.eimzoSession.getWs(), 
+            this.eimzoSession.getWs()!, 
             this.eimzoSession.getKeyId()
         );
         

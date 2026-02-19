@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import { signDocument } from "../../actions";
-import { eImzo } from "../../index";
+import { eImzo } from "../../services";
 import { log } from "../../utils";
 import { SignDocumentSchema } from "./dto";
 

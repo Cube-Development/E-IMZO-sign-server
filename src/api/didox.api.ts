@@ -4,6 +4,7 @@ import axiosRetry from "axios-retry";
 import { log } from "../utils";
 import { DIDOX_URL } from "../config";
 import { IGetTokenRequest, IGetTokenResponse } from "../type";
+import { tokenManager } from "./token-manager";
 
 const agent = new https.Agent({ rejectUnauthorized: false });
 
@@ -34,19 +35,10 @@ axiosRetry(authApi, {
   },
 });
 
-// Переменная для хранения токена
-let authToken: string | null = null;
-
-// Функция для установки токена
-export const setAuthToken = (token: string) => {
-  authToken = token;
-  log.api("🔑 Токен установлен для всех запросов");
-};
-
-// Interceptor для автоматического добавления токена
+// Interceptor для автоматического добавления токена из TokenManager
 authApi.interceptors.request.use(
   (config) => {
-    config.headers['user-key'] = authToken;
+    config.headers['user-key'] = tokenManager.getToken();
     return config;
   },
   (error) => {
@@ -54,7 +46,7 @@ authApi.interceptors.request.use(
   }
 );
 
-// Retry-interceptor: при 401 ждём обновления токена и повторяем запрос
+// Retry-interceptor: при 401 координированный refresh через TokenManager
 authApi.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -62,14 +54,17 @@ authApi.interceptors.response.use(
 
     if (error?.response?.status === 401 && !originalRequest._retried) {
       originalRequest._retried = true;
-      log.warn("🔄 Получен 401, ожидание обновления токена и повтор запроса...");
+      log.warn("🔄 Получен 401, запрос refresh токена через TokenManager...");
       
-      // Даём время auto-refresh обновить токен
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Подставляем актуальный токен
-      originalRequest.headers['user-key'] = authToken;
-      return authApi(originalRequest);
+      try {
+        // Mutex: первый 401 запускает refresh, остальные ждут
+        await tokenManager.refreshToken();
+        originalRequest.headers['user-key'] = tokenManager.getToken();
+        return authApi(originalRequest);
+      } catch (refreshError) {
+        log.error(`❌ Не удалось обновить токен: ${refreshError}`);
+        return Promise.reject(error);
+      }
     }
 
     return Promise.reject(error);

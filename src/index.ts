@@ -2,21 +2,14 @@ import 'dotenv/config';
 
 import bodyParser from "body-parser";
 import express from "express";
-import rateLimit from "express-rate-limit";
-import { ROUTES_SIGN, signRouter } from "./modules/sign-didox";
-import { ROUTES_SCREENSHOT, postScreenshotRouter } from "./modules/post-screenshot";
-import { EImzoSession } from "./modules/e-imzo";
-import { ScreenshotService } from './actions/post-screenshot';
-import { runAutoItScript, killAllAutoItProcesses } from './script/auto-it';
 import swaggerUi from "swagger-ui-express";
-import { openApiDocument } from './utils/swagger';
-import { USE_AUTOIT_DEMON } from './config';
+import { PORT, USE_AUTOIT_DEMON } from './config';
+import { ROUTES_SCREENSHOT, postScreenshotRouter, screenshotLimiter } from "./modules/post-screenshot";
+import { ROUTES_SIGN, signLimiter, signRouter } from "./modules/sign-didox";
+import { killAllAutoItProcesses, runAutoItScript } from './script/auto-it';
+import { eImzo, screenshotService } from './services';
 import { log } from './utils';
-
-export const screenshotService = ScreenshotService.getInstance();
-
-/** Обертка для контроллера */
-export const postScreenshot = (url: string, user_bot_id?: string) => screenshotService.capture(url, user_bot_id);
+import { openApiDocument } from './utils/swagger';
 
 const app = express();
 app.use(express.json());
@@ -25,31 +18,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 // Инициализация браузера и сессий при старте
 screenshotService.init().catch((err: any) => log.error(`Ошибка прогрева браузера: ${err}`));
-
-// ==========================================
-// Rate Limiting (express-rate-limit)
-// ==========================================
-const signLimiter = rateLimit({
-  windowMs: 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    status: "error",
-    message: "Слишком много запросов. Макс. 10 RPS. Повторите позже.",
-  },
-});
-
-const screenshotLimiter = rateLimit({
-  windowMs: 1000,
-  max: 5,                       // макс. 10 RPS
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    status: "error",
-    message: "Слишком много запросов на скриншоты. Макс. 10 RPS.",
-  },
-});
 
 // Подключаем Swagger UI
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
@@ -68,9 +36,7 @@ if (USE_AUTOIT_DEMON) {
   log.info("AutoIt-демон не используется");
 }
 
-export const eImzo = new EImzoSession();
-
-// Инициализация сессии при старте сервера
+// Инициализация EImzo сессии при старте сервера
 eImzo.init().catch(console.error);
 
 app.get("/", (req, res) => {
@@ -95,13 +61,8 @@ app.get("/health", (req, res) => {
 app.use(ROUTES_SIGN.BASE, signLimiter, signRouter);
 app.use(ROUTES_SCREENSHOT.BASE, screenshotLimiter, postScreenshotRouter);
 
-const port = Number(process.env.PORT) || 3000;
-
-// ==========================================
-// Graceful Shutdown с drain
-// ==========================================
-const server = app.listen(port, "0.0.0.0", () => {
-  log.info(`Server is running on port ${port}`);
+const server = app.listen(PORT, "0.0.0.0", () => {
+  log.info(`Server is running on port ${PORT}`);
 });
 
 const gracefulShutdown = async (signal: string) => {

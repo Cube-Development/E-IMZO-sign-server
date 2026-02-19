@@ -1,12 +1,13 @@
 import { runAutoItScript } from "../script/auto-it";
-import { createAttachedSignature, createSignature, getCertificates, loadKey } from "../websoket";
+import { createAttachedSignature, createSignature, getCertificates, loadKey } from "../websocket";
 import { log } from "../utils";
 import { createSignEDO, getSignInfoEDO, getTimestamp } from "../api";
+import WebSocket from "ws";
 
 export const signDocument = async (
   documentId: string,
   owner: 0 | 1 = 0,
-  ws?: any,
+  ws: WebSocket,
   oldKeyId?: string | null,
 ): Promise<{keyId: string, success: boolean}> => {
   const prefix = `Document ID: ${documentId} | owner: ${owner}`;

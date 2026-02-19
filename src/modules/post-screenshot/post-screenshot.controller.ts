@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { z } from "zod";
-import { postScreenshot } from "../../index";
+import { postScreenshot } from "../../services";
 import { log } from "../../utils";
 import { PostScreenShotSchema } from "./dto";
 

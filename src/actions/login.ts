@@ -1,6 +1,6 @@
 import { runAutoItScript } from "../script/auto-it";
 import { log, parseCertificateAlias } from "../utils";
-import { addApiKey, createSignature, getCertificates, loadKey } from "../websoket";
+import { addApiKey, createSignature, getCertificates, loadKey } from "../websocket";
 import { getTimestamp, getTokenByCertificate } from "./../api";
 
 export const login = async (ws?: any): Promise<{token: string, keyId: string}> => {

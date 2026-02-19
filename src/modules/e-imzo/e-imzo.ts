@@ -2,10 +2,10 @@
 import WebSocket from "ws";
 import { Mutex } from "async-mutex";
 import { login } from "../../actions";
-import { setAuthToken } from "../../api";
+import { tokenManager } from "../../api";
 import { CRYPTOAPI_WSS, LOGIN_REFRESH_DELAY } from "../../config";
 import { log } from "../../utils";
-import { createWebSocket } from "../../websoket";
+import { createWebSocket } from "../../websocket";
 
 export class EImzoSession {
   private ws: WebSocket | null = null;
@@ -15,7 +15,9 @@ export class EImzoSession {
   private isActive: boolean = false;
   private reconnectMutex = new Mutex(); // защита от параллельных reconnect
 
-  constructor() {}
+  constructor() {
+    tokenManager.registerRefresh(() => this.reconnect());
+  }
 
   // Инициализация при старте сервера
   public async init() {
@@ -47,7 +49,7 @@ export class EImzoSession {
     this.ws = await createWebSocket(CRYPTOAPI_WSS);
     const { token, keyId } = await login(this.ws);
     this.keyId = keyId;
-    setAuthToken(token);
+    tokenManager.setToken(token);
 
     log.websocket("🔑 EImzoSession вошла в систему / токен обновлён");
   }
