@@ -116,24 +116,51 @@ export async function captureInstagramPostScreenshot(page: Page, postUrl: string
 
   await closeInstagramDialogIfExists(page);
 
-  log.info("Ожидание медиа...");
+  log.info("Ожидание обложки (Video Cover)...");
   try {
     await page.waitForFunction(() => {
-      const postArticle = document.querySelector('article');
-      if (!postArticle) return false;
+      const getImgInfo = (img: HTMLImageElement) => `src: ${img.src.substring(0, 50)}..., complete: ${img.complete}, naturalWidth: ${img.naturalWidth}`;
 
-      // Ждем картинки
-      const imgs = Array.from(postArticle.querySelectorAll('img'));
-      const imgsLoaded = imgs.length === 0 || imgs.every(img => img.complete && img.naturalWidth > 0);
-      
-      const videos = Array.from(postArticle.querySelectorAll('video'));
-      const videosReady = videos.length === 0 || videos.every(v => !!v.poster || v.readyState >= 1);
+      // 1. Поиск через data-instancekey (Reels/Video контейнер)
+      const videoContainer = document.querySelector('[data-instancekey^="id-vpuid"]');
+      if (videoContainer) {
+        const coverImg = videoContainer.querySelector('img');
+        if (coverImg && coverImg.complete && coverImg.naturalWidth > 0) {
+          console.log(`[Wait] ✅ Found cover via data-instancekey: ${getImgInfo(coverImg)}`);
+          return true;
+        }
+      }
 
-      return imgsLoaded && videosReady;
-    }, null, { timeout: 7000, polling: 500 });
-    log.info("✅ Медиа контент загружен");
+      // 2. Поиск через специальный aria-label (дизайн Video player)
+      const videoPlayer = document.querySelector('div[role="group"][aria-label="Video player"]');
+      if (videoPlayer) {
+        const coverImg = videoPlayer.querySelector('img');
+        if (coverImg && coverImg.complete && coverImg.naturalWidth > 0) {
+          console.log(`[Wait] ✅ Found cover via aria-label: ${getImgInfo(coverImg)}`);
+          return true;
+        }
+      }
+
+      // 3. Фолбэк для постов и Reels без специфичных оберток
+      // Ищем все крупные изображения (больше 100px), которые могут быть контентом
+      const allImgs = Array.from(document.querySelectorAll('img')).filter(img => {
+        // Исключаем аватарки и мелкие иконки по размеру или классам (аватарки обычно скругленные или в специальных контейнерах)
+        return img.naturalWidth > 100 && !img.closest('header'); 
+      });
+
+      if (allImgs.length > 0) {
+        const allLoaded = allImgs.every(img => img.complete && img.naturalWidth > 0);
+        if (allLoaded) {
+           console.log(`[Wait] ✅ All content images loaded (${allImgs.length}): ${allImgs.map(getImgInfo).join(' | ')}`);
+           return true;
+        }
+      }
+
+      return false;
+    }, null, { timeout: 10000, polling: 200 });
+    log.info("✅ Обложка/Контент загружены");
   } catch (e: any) {
-    log.warn(`⚠️ Тайм-аут ожидания медиа (7с): ${e.message}. Идем дальше.`);
+    log.warn(`⚠️ Тайм-аут ожидания обложки (10с): ${e.message}. Делаем скриншот как есть.`);
   }
 
   // Скрываем текст ошибки видео (версия V8)
